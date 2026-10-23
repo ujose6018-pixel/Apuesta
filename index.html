@@ -1,0 +1,1190 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tracker Multi-Apuesta en Vivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400,600,700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Ocultar flechas en inputs numéricos */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white pb-32">
+
+    <!-- Top Navigation Header -->
+    <header class="w-full bg-slate-900 border-b border-slate-800 p-2 shadow-md sticky top-0 z-30">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-2 truncate">
+                <div class="bg-indigo-600 p-1.5 rounded-lg text-white shrink-0 shadow-sm">
+                    <i class="fa-solid fa-bolt text-xs"></i>
+                </div>
+                <div class="truncate">
+                    <h1 class="text-xs font-bold tracking-tight truncate text-slate-100" id="activeMatchLabel">Partido Principal</h1>
+                    <p class="text-[9px] text-slate-400 font-medium">Tracker en Vivo</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="openMatchesModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-list-check"></i> Partidos
+                </button>
+                <button onclick="openSettings()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-gear"></i> Ajustes
+                </button>
+                <button onclick="openAddBetModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-md shadow-indigo-900/20 transition-transform active:scale-95">
+                    <i class="fa-solid fa-plus"></i> Apuesta
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area (Compact and at the top) -->
+    <main class="w-full max-w-md mx-auto p-3 flex flex-col space-y-3 mt-1">
+        
+        <!-- TV-like Unified Panel Container for All Bets -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg shadow-black/40 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-200">
+                    <i class="fa-solid fa-tv text-indigo-400 text-xs"></i> Tus Apuestas Activas
+                </div>
+                <div class="text-[10px] text-slate-400 font-medium bg-slate-950 px-2 py-1 rounded-md border border-slate-800">
+                    Total: <span id="headerTotalScore" class="font-bold text-indigo-400 text-xs ml-0.5">0</span> pts
+                </div>
+            </div>
+
+            <!-- List of all bets in this match -->
+            <div id="betsListContainer" class="divide-y divide-slate-800/50 flex flex-col gap-0.5">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+
+        <!-- SCORE CONTROL PANEL (Right below bets, always visible) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg shadow-black/40 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <span class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-gamepad text-indigo-400 text-xs"></i> Control de Marcador</span>
+                <span class="text-[9px] text-slate-400 font-medium">Toca para sumar</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Team 1 Control Box -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between shadow-inner">
+                    <div class="flex items-center justify-between mb-2">
+                        <input type="text" id="team1Name" onchange="updateTeamName(1, this.value)" value="Equipo A" class="bg-transparent font-bold text-slate-200 text-xs w-full focus:outline-none truncate" placeholder="Equipo A">
+                        <span id="team1Score" class="text-lg font-black text-indigo-400 pl-1 leading-none">0</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button onclick="modifyScore(1, -1)" class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-slate-400 py-2 rounded-lg font-black text-sm flex items-center justify-center transition-colors">-</button>
+                        <button onclick="modifyScore(1, 1)" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-2 rounded-lg font-black text-sm flex items-center justify-center shadow transition-colors">+1</button>
+                        <button onclick="modifyScore(1, 2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+2</button>
+                        <button onclick="modifyScore(1, 3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+3</button>
+                    </div>
+                </div>
+
+                <!-- Team 2 Control Box -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between shadow-inner">
+                    <div class="flex items-center justify-between mb-2">
+                        <input type="text" id="team2Name" onchange="updateTeamName(2, this.value)" value="Equipo B" class="bg-transparent font-bold text-slate-200 text-xs w-full focus:outline-none truncate" placeholder="Equipo B">
+                        <span id="team2Score" class="text-lg font-black text-indigo-400 pl-1 leading-none">0</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button onclick="modifyScore(2, -1)" class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-slate-400 py-2 rounded-lg font-black text-sm flex items-center justify-center transition-colors">-</button>
+                        <button onclick="modifyScore(2, 1)" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-2 rounded-lg font-black text-sm flex items-center justify-center shadow transition-colors">+1</button>
+                        <button onclick="modifyScore(2, 2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+2</button>
+                        <button onclick="modifyScore(2, 3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+3</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal to Add / Edit a Bet -->
+    <div id="betModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 id="betModalTitle" class="font-bold text-sm text-white">Añadir Apuesta</h3>
+                <button onclick="closeAddBetModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tipo de Apuesta</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="typeUnderBtn" onclick="setBetType('under')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-900/30">UNDER</button>
+                    <button type="button" id="typeOverBtn" onclick="setBetType('over')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800">OVER</button>
+                    <button type="button" id="typeHandicapBtn" onclick="setBetType('handicap')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800">HÁNDICAP</button>
+                </div>
+            </div>
+
+            <div id="totalsConfigSection" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Línea Total</label>
+                    <input type="number" id="betLineInput" step="0.5" value="215.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                </div>
+            </div>
+
+            <div id="handicapConfigSection" class="hidden space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Equipo a favor</label>
+                    <select id="handicapTeamSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none transition-all">
+                        <option value="1">Equipo A</option>
+                        <option value="2">Equipo B</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Línea Hándicap (ej: -3.0 o +14.5)</label>
+                    <input type="number" id="handicapValueInput" step="0.25" value="-3.0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nota (Opcional)</label>
+                <input type="text" id="betNoteInput" placeholder="Ej: Apuesta principal" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+            </div>
+
+            <button onclick="saveBet()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30 text-xs mt-2">
+                GUARDAR APUESTA
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-gear text-slate-400"></i> Configurar Partido</h3>
+                <button onclick="closeSettings()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre del Partido</label>
+                <input type="text" id="matchNameInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80">
+                <label class="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-3"><i class="fa-solid fa-pen-to-square"></i> Marcador Inicial en Vivo</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-950 border border-slate-800 p-2 rounded-xl">
+                        <label id="labelTeam1Init" class="block text-[10px] text-slate-400 truncate mb-1 text-center font-semibold">Equipo A</label>
+                        <input type="number" id="initScore1Input" min="0" value="0" class="w-full bg-transparent text-center text-white font-black text-lg focus:outline-none">
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-2 rounded-xl">
+                        <label id="labelTeam2Init" class="block text-[10px] text-slate-400 truncate mb-1 text-center font-semibold">Equipo B</label>
+                        <input type="number" id="initScore2Input" min="0" value="0" class="w-full bg-transparent text-center text-white font-black text-lg focus:outline-none">
+                    </div>
+                </div>
+                <p class="text-[9px] text-slate-500 mt-2 text-center">Útil si empiezas a trackear un partido avanzado</p>
+            </div>
+
+            <button onclick="saveSettings()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30 text-xs mt-2">
+                ACTUALIZAR PARTIDO
+            </button>
+        </div>
+    </div>
+
+    <!-- Matches Manager Modal -->
+    <div id="matchesModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-list-check text-slate-400"></i> Partidos Guardados</h3>
+                <button onclick="closeMatchesModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="newMatchNameInput" placeholder="Ej: Lakers vs Celtics" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                <button onclick="addNewMatch()" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white px-4 py-3 rounded-xl text-xs font-black transition-all shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+
+            <div id="matchesListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar"></div>
+        </div>
+    </div>
+
+    <script>
+        let matches = [
+            {
+                id: '1',
+                name: 'Partido Principal',
+                team1Name: 'Equipo A',
+                team2Name: 'Equipo B',
+                score1: 0,
+                score2: 0,
+                bets: [
+                    { id: 'b1', type: 'under', betLine: 215.5, note: 'Línea Under Principal' }
+                ]
+            }
+        ];
+        let activeMatchId = '1';
+        let editingBetId = null;
+
+        window.onload = function() {
+            loadFromSession();
+            renderUI();
+        };
+
+        function getActiveMatch() {
+            return matches.find(m => m.id === activeMatchId) || matches[0];
+        }
+
+        function saveToSession() {
+            sessionStorage.setItem('live_tracker_matches', JSON.stringify(matches));
+            sessionStorage.setItem('live_tracker_active', activeMatchId);
+        }
+
+        function loadFromSession() {
+            const savedMatches = sessionStorage.getItem('live_tracker_matches');
+            const savedActive = sessionStorage.getItem('live_tracker_active');
+            if (savedMatches) {
+                try { 
+                    matches = JSON.parse(savedMatches); 
+                    matches.forEach(m => {
+                        if (!m.bets) {
+                            m.bets = [];
+                        }
+                    });
+                } catch(e){}
+            }
+            if (savedActive) activeMatchId = savedActive;
+        }
+
+        function modifyScore(team, amount) {
+            let m = getActiveMatch();
+            if (team === 1) m.score1 = Math.max(0, m.score1 + amount);
+            else m.score2 = Math.max(0, m.score2 + amount);
+            saveToSession();
+            renderUI();
+        }
+
+        function updateTeamName(team, val) {
+            let m = getActiveMatch();
+            if (team === 1) m.team1Name = val || 'Equipo A';
+            else m.team2Name = val || 'Equipo B';
+            saveToSession();
+            renderUI();
+        }
+
+        function renderUI() {
+            let m = getActiveMatch();
+            
+            document.getElementById('team1Name').value = m.team1Name;
+            document.getElementById('team2Name').value = m.team2Name;
+            document.getElementById('team1Score').innerText = m.score1;
+            document.getElementById('team2Score').innerText = m.score2;
+            document.getElementById('activeMatchLabel').innerText = m.name;
+            document.getElementById('headerTotalScore').innerText = m.score1 + m.score2;
+
+            renderBetsList(m);
+        }
+
+        function renderBetsList(m) {
+            const container = document.getElementById('betsListContainer');
+            container.innerHTML = '';
+
+            if (!m.bets || m.bets.length === 0) {
+                container.innerHTML = `<div class="py-4 text-center text-[11px] font-medium text-slate-500 bg-slate-950/50 rounded-lg border border-slate-800/50 border-dashed">No hay apuestas activas. Presiona + Apuesta.</div>`;
+                return;
+            }
+
+            const totalScore = m.score1 + m.score2;
+
+            m.bets.forEach((bet) => {
+                const row = document.createElement('div');
+                row.className = "py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3";
+                
+                let titleHTML = '';
+                let statusHTML = '';
+
+                if (bet.type === 'under' || bet.type === 'over') {
+                    const isUnder = bet.type === 'under';
+                    const line = bet.betLine;
+                    const diff = isUnder ? (line - totalScore) : (totalScore - line);
+                    
+                    titleHTML = `<span class="text-xs font-black text-slate-100 tracking-wide">${isUnder ? 'UNDER' : 'OVER'} ${line}</span> <span class="text-[10px] text-slate-400 font-medium ml-1">(${bet.note || ''})</span>`;
+
+                    if (isUnder) {
+                        if (totalScore >= line) {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
+                        } else {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
+                        }
+                    } else { // Over
+                        if (totalScore >= line) {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
+                        } else {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
+                        }
+                    }
+
+                } else { // Handicap
+                    const teamName = bet.handicapTeam == 1 ? m.team1Name : m.team2Name;
+                    const hVal = bet.handicapValue;
+                    const signStr = hVal >= 0 ? `+${hVal}` : `${hVal}`;
+                    
+                    let adjustedDiff = bet.handicapTeam == 1 ? (m.score1 + hVal) - m.score2 : (m.score2 + hVal) - m.score1;
+
+                    titleHTML = `<span class="text-xs font-black text-slate-100 tracking-wide">HAP ${teamName} <span class="text-indigo-400">${signStr}</span></span> <span class="text-[10px] text-slate-400 font-medium ml-1">(${bet.note || ''})</span>`;
+                    
+                    if (adjustedDiff > 0) {
+                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
+                    } else if (adjustedDiff === 0) {
+                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 tracking-wider">PUSH</span>`;
+                    } else {
+                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
+                    }
+                }
+
+                row.innerHTML = `
+                    <div class="truncate flex-1">
+                        <div class="truncate">${titleHTML}</div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        ${statusHTML}
+                        <div class="flex items-center gap-1 border-l border-slate-800 pl-2">
+                            <button onclick="editBet('${bet.id}')" class="text-slate-500 hover:text-white p-1 transition-colors"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                            <button onclick="deleteBet('${bet.id}')" class="text-slate-600 hover:text-red-400 p-1 transition-colors"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(row);
+            });
+        }
+
+        function openAddBetModal() {
+            editingBetId = null;
+            document.getElementById('betModalTitle').innerText = "Añadir Apuesta";
+            document.getElementById('betLineInput').value = "215.5";
+            document.getElementById('handicapValueInput').value = "-3.0";
+            document.getElementById('betNoteInput').value = "";
+            populateHandicapSelect();
+            setBetType('under');
+            document.getElementById('betModal').classList.remove('hidden');
+        }
+
+        function editBet(betId) {
+            let m = getActiveMatch();
+            let bet = m.bets.find(b => b.id === betId);
+            if (!bet) return;
+
+            editingBetId = betId;
+            document.getElementById('betModalTitle').innerText = "Editar Apuesta";
+            document.getElementById('betNoteInput').value = bet.note || "";
+            populateHandicapSelect();
+
+            if (bet.type === 'handicap') {
+                setBetType('handicap');
+                document.getElementById('handicapValueInput').value = bet.handicapValue;
+                document.getElementById('handicapTeamSelect').value = bet.handicapTeam;
+            } else {
+                setBetType(bet.type);
+                document.getElementById('betLineInput').value = bet.betLine;
+            }
+
+            document.getElementById('betModal').classList.remove('hidden');
+        }
+
+        function closeAddBetModal() {
+            document.getElementById('betModal').classList.add('hidden');
+        }
+
+        function populateHandicapSelect() {
+            let m = getActiveMatch();
+            const teamSelect = document.getElementById('handicapTeamSelect');
+            teamSelect.innerHTML = `<option value="1">${m.team1Name}</option><option value="2">${m.team2Name}</option>`;
+        }
+
+        let tempBetType = 'under';
+        function setBetType(type) {
+            tempBetType = type;
+            const uBtn = document.getElementById('typeUnderBtn');
+            const oBtn = document.getElementById('typeOverBtn');
+            const hBtn = document.getElementById('typeHandicapBtn');
+            const totalsSec = document.getElementById('totalsConfigSection');
+            const handicapSec = document.getElementById('handicapConfigSection');
+
+            const inactiveClass = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800";
+
+            uBtn.className = inactiveClass;
+            oBtn.className = inactiveClass;
+            hBtn.className = inactiveClass;
+
+            if (type === 'under') {
+                uBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-900/30";
+                totalsSec.classList.remove('hidden');
+                handicapSec.classList.add('hidden');
+            } else if (type === 'over') {
+                oBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-900/30";
+                totalsSec.classList.remove('hidden');
+                handicapSec.classList.add('hidden');
+            } else {
+                hBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-900/30";
+                totalsSec.classList.add('hidden');
+                handicapSec.classList.remove('hidden');
+            }
+        }
+
+        function saveBet() {
+            let m = getActiveMatch();
+            const noteVal = document.getElementById('betNoteInput').value.trim();
+            const val = parseFloat(document.getElementById('betLineInput').value);
+            const hVal = parseFloat(document.getElementById('handicapValueInput').value);
+            const hTeam = parseInt(document.getElementById('handicapTeamSelect').value);
+
+            if (!m.bets) m.bets = [];
+
+            if (editingBetId) {
+                let bet = m.bets.find(b => b.id === editingBetId);
+                if (bet) {
+                    bet.type = tempBetType;
+                    bet.note = noteVal;
+                    if (tempBetType === 'handicap') {
+                        bet.handicapValue = isNaN(hVal) ? -3.0 : hVal;
+                        bet.handicapTeam = hTeam;
+                    } else {
+                        bet.betLine = isNaN(val) ? 215.5 : val;
+                    }
+                }
+            } else {
+                const newBet = {
+                    id: 'b_' + Date.now(),
+                    type: tempBetType,
+                    note: noteVal
+                };
+                if (tempBetType === 'handicap') {
+                    newBet.handicapValue = isNaN(hVal) ? -3.0 : hVal;
+                    newBet.handicapTeam = hTeam;
+                } else {
+                    newBet.betLine = isNaN(val) ? 215.5 : val;
+                }
+                m.bets.push(newBet);
+            }
+
+            saveToSession();
+            renderUI();
+            closeAddBetModal();
+        }
+
+        function deleteBet(betId) {
+            let m = getActiveMatch();
+            m.bets = m.bets.filter(b => b.id !== betId);
+            saveToSession();
+            renderUI();
+        }
+
+        function openSettings() {
+            let m = getActiveMatch();
+            document.getElementById('matchNameInput').value = m.name;
+            document.getElementById('initScore1Input').value = m.score1;
+            document.getElementById('initScore2Input').value = m.score2;
+            document.getElementById('labelTeam1Init').innerText = m.team1Name;
+            document.getElementById('labelTeam2Init').innerText = m.team2Name;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            let m = getActiveMatch();
+            const nameVal = document.getElementById('matchNameInput').value.trim();
+            const init1 = parseInt(document.getElementById('initScore1Input').value);
+            const init2 = parseInt(document.getElementById('initScore2Input').value);
+
+            if (nameVal) m.name = nameVal;
+            if (!isNaN(init1) && init1 >= 0) m.score1 = init1;
+            if (!isNaN(init2) && init2 >= 0) m.score2 = init2;
+
+            saveToSession();
+            renderUI();
+            closeSettings();
+        }
+
+        function openMatchesModal() {
+            renderMatchesList();
+            document.getElementById('matchesModal').classList.remove('hidden');
+        }
+
+        function closeMatchesModal() {
+            document.getElementById('matchesModal').classList.add('hidden');
+        }
+
+        function renderMatchesList() {
+            const container = document.getElementById('matchesListContainer');
+            container.innerHTML = '';
+
+            matches.forEach(m => {
+                const isActive = m.id === activeMatchId;
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border flex items-center justify-between transition-all ${isActive ? 'bg-indigo-950/30 border-indigo-500/40 shadow-sm' : 'bg-slate-950 border-slate-800'}`;
+                
+                div.innerHTML = `
+                    <div class="cursor-pointer flex-1 truncate pr-2" onclick="switchMatch('${m.id}')">
+                        <div class="font-bold text-sm text-white flex items-center gap-2">
+                            ${m.name} 
+                            ${isActive ? '<span class="text-[9px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded tracking-wide">ACTIVO</span>' : ''}
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">${m.team1Name} vs ${m.team2Name}</div>
+                    </div>
+                    <button onclick="deleteMatch('${m.id}')" class="text-slate-600 hover:text-red-400 p-2 transition-colors" ${matches.length <= 1 ? 'disabled style="opacity:0.3"' : ''}>
+                        <i class="fa-solid fa-trash text-sm"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addNewMatch() {
+            const input = document.getElementById('newMatchNameInput');
+            const name = input.value.trim() || `Partido ${matches.length + 1}`;
+            const newId = 'm_' + Date.now();
+
+            matches.push({
+                id: newId,
+                name: name,
+                team1Name: 'Equipo A',
+                team2Name: 'Equipo B',
+                score1: 0,
+                score2: 0,
+                bets: []
+            });
+
+            activeMatchId = newId;
+            input.value = '';
+            saveToSession();
+            renderMatchesList();
+            renderUI();
+        }
+
+        function switchMatch(id) {
+            activeMatchId = id;
+            saveToSession();
+            closeMatchesModal();
+            renderUI();
+        }
+
+        function deleteMatch(id) {
+            if (matches.length <= 1) return;
+            matches = matches.filter(m => m.id !== id);
+            if (activeMatchId === id) activeMatchId = matches[0].id;
+            saveToSession();
+            renderMatchesList();
+            renderUI();
+        }
+    </script>
+</body>
+</html>
+``````html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tracker Multi-Apuesta en Vivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400,600,700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Ocultar flechas en inputs numéricos */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white pb-32">
+
+    <!-- Top Navigation Header -->
+    <header class="w-full bg-slate-900 border-b border-slate-800 p-2 shadow-md sticky top-0 z-30">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-2 truncate">
+                <div class="bg-indigo-600 p-1.5 rounded-lg text-white shrink-0 shadow-sm">
+                    <i class="fa-solid fa-bolt text-xs"></i>
+                </div>
+                <div class="truncate">
+                    <h1 class="text-xs font-bold tracking-tight truncate text-slate-100" id="activeMatchLabel">Partido Principal</h1>
+                    <p class="text-[9px] text-slate-400 font-medium">Tracker en Vivo</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="openMatchesModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-list-check"></i> Partidos
+                </button>
+                <button onclick="openSettings()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-gear"></i> Ajustes
+                </button>
+                <button onclick="openAddBetModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-md shadow-indigo-900/20 transition-transform active:scale-95">
+                    <i class="fa-solid fa-plus"></i> Apuesta
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area (Compact and at the top) -->
+    <main class="w-full max-w-md mx-auto p-3 flex flex-col space-y-3 mt-1">
+        
+        <!-- TV-like Unified Panel Container for All Bets -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg shadow-black/40 space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-200">
+                    <i class="fa-solid fa-tv text-indigo-400 text-xs"></i> Tus Apuestas Activas
+                </div>
+                <div class="text-[10px] text-slate-400 font-medium bg-slate-950 px-2 py-1 rounded-md border border-slate-800">
+                    Total: <span id="headerTotalScore" class="font-bold text-indigo-400 text-xs ml-0.5">0</span> pts
+                </div>
+            </div>
+
+            <!-- List of all bets in this match -->
+            <div id="betsListContainer" class="divide-y divide-slate-800/50 flex flex-col gap-0.5">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+
+        <!-- SCORE CONTROL PANEL (Right below bets, always visible) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg shadow-black/40 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <span class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-gamepad text-indigo-400 text-xs"></i> Control de Marcador</span>
+                <span class="text-[9px] text-slate-400 font-medium">Toca para sumar</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <!-- Team 1 Control Box -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between shadow-inner">
+                    <div class="flex items-center justify-between mb-2">
+                        <input type="text" id="team1Name" onchange="updateTeamName(1, this.value)" value="Equipo A" class="bg-transparent font-bold text-slate-200 text-xs w-full focus:outline-none truncate" placeholder="Equipo A">
+                        <span id="team1Score" class="text-lg font-black text-indigo-400 pl-1 leading-none">0</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button onclick="modifyScore(1, -1)" class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-slate-400 py-2 rounded-lg font-black text-sm flex items-center justify-center transition-colors">-</button>
+                        <button onclick="modifyScore(1, 1)" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-2 rounded-lg font-black text-sm flex items-center justify-center shadow transition-colors">+1</button>
+                        <button onclick="modifyScore(1, 2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+2</button>
+                        <button onclick="modifyScore(1, 3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+3</button>
+                    </div>
+                </div>
+
+                <!-- Team 2 Control Box -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between shadow-inner">
+                    <div class="flex items-center justify-between mb-2">
+                        <input type="text" id="team2Name" onchange="updateTeamName(2, this.value)" value="Equipo B" class="bg-transparent font-bold text-slate-200 text-xs w-full focus:outline-none truncate" placeholder="Equipo B">
+                        <span id="team2Score" class="text-lg font-black text-indigo-400 pl-1 leading-none">0</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button onclick="modifyScore(2, -1)" class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-slate-400 py-2 rounded-lg font-black text-sm flex items-center justify-center transition-colors">-</button>
+                        <button onclick="modifyScore(2, 1)" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-2 rounded-lg font-black text-sm flex items-center justify-center shadow transition-colors">+1</button>
+                        <button onclick="modifyScore(2, 2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+2</button>
+                        <button onclick="modifyScore(2, 3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+3</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal to Add / Edit a Bet -->
+    <div id="betModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 id="betModalTitle" class="font-bold text-sm text-white">Añadir Apuesta</h3>
+                <button onclick="closeAddBetModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tipo de Apuesta</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="typeUnderBtn" onclick="setBetType('under')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-900/30">UNDER</button>
+                    <button type="button" id="typeOverBtn" onclick="setBetType('over')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800">OVER</button>
+                    <button type="button" id="typeHandicapBtn" onclick="setBetType('handicap')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800">HÁNDICAP</button>
+                </div>
+            </div>
+
+            <div id="totalsConfigSection" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Línea Total</label>
+                    <input type="number" id="betLineInput" step="0.5" value="215.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                </div>
+            </div>
+
+            <div id="handicapConfigSection" class="hidden space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Equipo a favor</label>
+                    <select id="handicapTeamSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none transition-all">
+                        <option value="1">Equipo A</option>
+                        <option value="2">Equipo B</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Línea Hándicap (ej: -3.0 o +14.5)</label>
+                    <input type="number" id="handicapValueInput" step="0.25" value="-3.0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nota (Opcional)</label>
+                <input type="text" id="betNoteInput" placeholder="Ej: Apuesta principal" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+            </div>
+
+            <button onclick="saveBet()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30 text-xs mt-2">
+                GUARDAR APUESTA
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-gear text-slate-400"></i> Configurar Partido</h3>
+                <button onclick="closeSettings()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre del Partido</label>
+                <input type="text" id="matchNameInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80">
+                <label class="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-3"><i class="fa-solid fa-pen-to-square"></i> Marcador Inicial en Vivo</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-950 border border-slate-800 p-2 rounded-xl">
+                        <label id="labelTeam1Init" class="block text-[10px] text-slate-400 truncate mb-1 text-center font-semibold">Equipo A</label>
+                        <input type="number" id="initScore1Input" min="0" value="0" class="w-full bg-transparent text-center text-white font-black text-lg focus:outline-none">
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-2 rounded-xl">
+                        <label id="labelTeam2Init" class="block text-[10px] text-slate-400 truncate mb-1 text-center font-semibold">Equipo B</label>
+                        <input type="number" id="initScore2Input" min="0" value="0" class="w-full bg-transparent text-center text-white font-black text-lg focus:outline-none">
+                    </div>
+                </div>
+                <p class="text-[9px] text-slate-500 mt-2 text-center">Útil si empiezas a trackear un partido avanzado</p>
+            </div>
+
+            <button onclick="saveSettings()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30 text-xs mt-2">
+                ACTUALIZAR PARTIDO
+            </button>
+        </div>
+    </div>
+
+    <!-- Matches Manager Modal -->
+    <div id="matchesModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-list-check text-slate-400"></i> Partidos Guardados</h3>
+                <button onclick="closeMatchesModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="newMatchNameInput" placeholder="Ej: Lakers vs Celtics" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                <button onclick="addNewMatch()" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white px-4 py-3 rounded-xl text-xs font-black transition-all shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+
+            <div id="matchesListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar"></div>
+        </div>
+    </div>
+
+    <script>
+        let matches = [
+            {
+                id: '1',
+                name: 'Partido Principal',
+                team1Name: 'Equipo A',
+                team2Name: 'Equipo B',
+                score1: 0,
+                score2: 0,
+                bets: [
+                    { id: 'b1', type: 'under', betLine: 215.5, note: 'Línea Under Principal' }
+                ]
+            }
+        ];
+        let activeMatchId = '1';
+        let editingBetId = null;
+
+        window.onload = function() {
+            loadFromSession();
+            renderUI();
+        };
+
+        function getActiveMatch() {
+            return matches.find(m => m.id === activeMatchId) || matches[0];
+        }
+
+        function saveToSession() {
+            sessionStorage.setItem('live_tracker_matches', JSON.stringify(matches));
+            sessionStorage.setItem('live_tracker_active', activeMatchId);
+        }
+
+        function loadFromSession() {
+            const savedMatches = sessionStorage.getItem('live_tracker_matches');
+            const savedActive = sessionStorage.getItem('live_tracker_active');
+            if (savedMatches) {
+                try { 
+                    matches = JSON.parse(savedMatches); 
+                    matches.forEach(m => {
+                        if (!m.bets) {
+                            m.bets = [];
+                        }
+                    });
+                } catch(e){}
+            }
+            if (savedActive) activeMatchId = savedActive;
+        }
+
+        function modifyScore(team, amount) {
+            let m = getActiveMatch();
+            if (team === 1) m.score1 = Math.max(0, m.score1 + amount);
+            else m.score2 = Math.max(0, m.score2 + amount);
+            saveToSession();
+            renderUI();
+        }
+
+        function updateTeamName(team, val) {
+            let m = getActiveMatch();
+            if (team === 1) m.team1Name = val || 'Equipo A';
+            else m.team2Name = val || 'Equipo B';
+            saveToSession();
+            renderUI();
+        }
+
+        function renderUI() {
+            let m = getActiveMatch();
+            
+            document.getElementById('team1Name').value = m.team1Name;
+            document.getElementById('team2Name').value = m.team2Name;
+            document.getElementById('team1Score').innerText = m.score1;
+            document.getElementById('team2Score').innerText = m.score2;
+            document.getElementById('activeMatchLabel').innerText = m.name;
+            document.getElementById('headerTotalScore').innerText = m.score1 + m.score2;
+
+            renderBetsList(m);
+        }
+
+        function renderBetsList(m) {
+            const container = document.getElementById('betsListContainer');
+            container.innerHTML = '';
+
+            if (!m.bets || m.bets.length === 0) {
+                container.innerHTML = `<div class="py-4 text-center text-[11px] font-medium text-slate-500 bg-slate-950/50 rounded-lg border border-slate-800/50 border-dashed">No hay apuestas activas. Presiona + Apuesta.</div>`;
+                return;
+            }
+
+            const totalScore = m.score1 + m.score2;
+
+            m.bets.forEach((bet) => {
+                const row = document.createElement('div');
+                row.className = "py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3";
+                
+                let titleHTML = '';
+                let statusHTML = '';
+
+                if (bet.type === 'under' || bet.type === 'over') {
+                    const isUnder = bet.type === 'under';
+                    const line = bet.betLine;
+                    const diff = isUnder ? (line - totalScore) : (totalScore - line);
+                    
+                    titleHTML = `<span class="text-xs font-black text-slate-100 tracking-wide">${isUnder ? 'UNDER' : 'OVER'} ${line}</span> <span class="text-[10px] text-slate-400 font-medium ml-1">(${bet.note || ''})</span>`;
+
+                    if (isUnder) {
+                        if (totalScore >= line) {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
+                        } else {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
+                        }
+                    } else { // Over
+                        if (totalScore >= line) {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
+                        } else {
+                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
+                        }
+                    }
+
+                } else { // Handicap
+                    const teamName = bet.handicapTeam == 1 ? m.team1Name : m.team2Name;
+                    const hVal = bet.handicapValue;
+                    const signStr = hVal >= 0 ? `+${hVal}` : `${hVal}`;
+                    
+                    let adjustedDiff = bet.handicapTeam == 1 ? (m.score1 + hVal) - m.score2 : (m.score2 + hVal) - m.score1;
+
+                    titleHTML = `<span class="text-xs font-black text-slate-100 tracking-wide">HAP ${teamName} <span class="text-indigo-400">${signStr}</span></span> <span class="text-[10px] text-slate-400 font-medium ml-1">(${bet.note || ''})</span>`;
+                    
+                    if (adjustedDiff > 0) {
+                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
+                    } else if (adjustedDiff === 0) {
+                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 tracking-wider">PUSH</span>`;
+                    } else {
+                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
+                    }
+                }
+
+                row.innerHTML = `
+                    <div class="truncate flex-1">
+                        <div class="truncate">${titleHTML}</div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        ${statusHTML}
+                        <div class="flex items-center gap-1 border-l border-slate-800 pl-2">
+                            <button onclick="editBet('${bet.id}')" class="text-slate-500 hover:text-white p-1 transition-colors"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                            <button onclick="deleteBet('${bet.id}')" class="text-slate-600 hover:text-red-400 p-1 transition-colors"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(row);
+            });
+        }
+
+        function openAddBetModal() {
+            editingBetId = null;
+            document.getElementById('betModalTitle').innerText = "Añadir Apuesta";
+            document.getElementById('betLineInput').value = "215.5";
+            document.getElementById('handicapValueInput').value = "-3.0";
+            document.getElementById('betNoteInput').value = "";
+            populateHandicapSelect();
+            setBetType('under');
+            document.getElementById('betModal').classList.remove('hidden');
+        }
+
+        function editBet(betId) {
+            let m = getActiveMatch();
+            let bet = m.bets.find(b => b.id === betId);
+            if (!bet) return;
+
+            editingBetId = betId;
+            document.getElementById('betModalTitle').innerText = "Editar Apuesta";
+            document.getElementById('betNoteInput').value = bet.note || "";
+            populateHandicapSelect();
+
+            if (bet.type === 'handicap') {
+                setBetType('handicap');
+                document.getElementById('handicapValueInput').value = bet.handicapValue;
+                document.getElementById('handicapTeamSelect').value = bet.handicapTeam;
+            } else {
+                setBetType(bet.type);
+                document.getElementById('betLineInput').value = bet.betLine;
+            }
+
+            document.getElementById('betModal').classList.remove('hidden');
+        }
+
+        function closeAddBetModal() {
+            document.getElementById('betModal').classList.add('hidden');
+        }
+
+        function populateHandicapSelect() {
+            let m = getActiveMatch();
+            const teamSelect = document.getElementById('handicapTeamSelect');
+            teamSelect.innerHTML = `<option value="1">${m.team1Name}</option><option value="2">${m.team2Name}</option>`;
+        }
+
+        let tempBetType = 'under';
+        function setBetType(type) {
+            tempBetType = type;
+            const uBtn = document.getElementById('typeUnderBtn');
+            const oBtn = document.getElementById('typeOverBtn');
+            const hBtn = document.getElementById('typeHandicapBtn');
+            const totalsSec = document.getElementById('totalsConfigSection');
+            const handicapSec = document.getElementById('handicapConfigSection');
+
+            const inactiveClass = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800";
+
+            uBtn.className = inactiveClass;
+            oBtn.className = inactiveClass;
+            hBtn.className = inactiveClass;
+
+            if (type === 'under') {
+                uBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-900/30";
+                totalsSec.classList.remove('hidden');
+                handicapSec.classList.add('hidden');
+            } else if (type === 'over') {
+                oBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-900/30";
+                totalsSec.classList.remove('hidden');
+                handicapSec.classList.add('hidden');
+            } else {
+                hBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-900/30";
+                totalsSec.classList.add('hidden');
+                handicapSec.classList.remove('hidden');
+            }
+        }
+
+        function saveBet() {
+            let m = getActiveMatch();
+            const noteVal = document.getElementById('betNoteInput').value.trim();
+            const val = parseFloat(document.getElementById('betLineInput').value);
+            const hVal = parseFloat(document.getElementById('handicapValueInput').value);
+            const hTeam = parseInt(document.getElementById('handicapTeamSelect').value);
+
+            if (!m.bets) m.bets = [];
+
+            if (editingBetId) {
+                let bet = m.bets.find(b => b.id === editingBetId);
+                if (bet) {
+                    bet.type = tempBetType;
+                    bet.note = noteVal;
+                    if (tempBetType === 'handicap') {
+                        bet.handicapValue = isNaN(hVal) ? -3.0 : hVal;
+                        bet.handicapTeam = hTeam;
+                    } else {
+                        bet.betLine = isNaN(val) ? 215.5 : val;
+                    }
+                }
+            } else {
+                const newBet = {
+                    id: 'b_' + Date.now(),
+                    type: tempBetType,
+                    note: noteVal
+                };
+                if (tempBetType === 'handicap') {
+                    newBet.handicapValue = isNaN(hVal) ? -3.0 : hVal;
+                    newBet.handicapTeam = hTeam;
+                } else {
+                    newBet.betLine = isNaN(val) ? 215.5 : val;
+                }
+                m.bets.push(newBet);
+            }
+
+            saveToSession();
+            renderUI();
+            closeAddBetModal();
+        }
+
+        function deleteBet(betId) {
+            let m = getActiveMatch();
+            m.bets = m.bets.filter(b => b.id !== betId);
+            saveToSession();
+            renderUI();
+        }
+
+        function openSettings() {
+            let m = getActiveMatch();
+            document.getElementById('matchNameInput').value = m.name;
+            document.getElementById('initScore1Input').value = m.score1;
+            document.getElementById('initScore2Input').value = m.score2;
+            document.getElementById('labelTeam1Init').innerText = m.team1Name;
+            document.getElementById('labelTeam2Init').innerText = m.team2Name;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            let m = getActiveMatch();
+            const nameVal = document.getElementById('matchNameInput').value.trim();
+            const init1 = parseInt(document.getElementById('initScore1Input').value);
+            const init2 = parseInt(document.getElementById('initScore2Input').value);
+
+            if (nameVal) m.name = nameVal;
+            if (!isNaN(init1) && init1 >= 0) m.score1 = init1;
+            if (!isNaN(init2) && init2 >= 0) m.score2 = init2;
+
+            saveToSession();
+            renderUI();
+            closeSettings();
+        }
+
+        function openMatchesModal() {
+            renderMatchesList();
+            document.getElementById('matchesModal').classList.remove('hidden');
+        }
+
+        function closeMatchesModal() {
+            document.getElementById('matchesModal').classList.add('hidden');
+        }
+
+        function renderMatchesList() {
+            const container = document.getElementById('matchesListContainer');
+            container.innerHTML = '';
+
+            matches.forEach(m => {
+                const isActive = m.id === activeMatchId;
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border flex items-center justify-between transition-all ${isActive ? 'bg-indigo-950/30 border-indigo-500/40 shadow-sm' : 'bg-slate-950 border-slate-800'}`;
+                
+                div.innerHTML = `
+                    <div class="cursor-pointer flex-1 truncate pr-2" onclick="switchMatch('${m.id}')">
+                        <div class="font-bold text-sm text-white flex items-center gap-2">
+                            ${m.name} 
+                            ${isActive ? '<span class="text-[9px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded tracking-wide">ACTIVO</span>' : ''}
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">${m.team1Name} vs ${m.team2Name}</div>
+                    </div>
+                    <button onclick="deleteMatch('${m.id}')" class="text-slate-600 hover:text-red-400 p-2 transition-colors" ${matches.length <= 1 ? 'disabled style="opacity:0.3"' : ''}>
+                        <i class="fa-solid fa-trash text-sm"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addNewMatch() {
+            const input = document.getElementById('newMatchNameInput');
+            const name = input.value.trim() || `Partido ${matches.length + 1}`;
+            const newId = 'm_' + Date.now();
+
+            matches.push({
+                id: newId,
+                name: name,
+                team1Name: 'Equipo A',
+                team2Name: 'Equipo B',
+                score1: 0,
+                score2: 0,
+                bets: []
+            });
+
+            activeMatchId = newId;
+            input.value = '';
+            saveToSession();
+            renderMatchesList();
+            renderUI();
+        }
+
+        function switchMatch(id) {
+            activeMatchId = id;
+            saveToSession();
+            closeMatchesModal();
+            renderUI();
+        }
+
+        function deleteMatch(id) {
+            if (matches.length <= 1) return;
+            matches = matches.filter(m => m.id !== id);
+            if (activeMatchId === id) activeMatchId = matches[0].id;
+            saveToSession();
+            renderMatchesList();
+            renderUI();
+        }
+    </script>
+</body>
+</html>
