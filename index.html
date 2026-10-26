@@ -1,596 +1,118 @@
-```html
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tracker Multi-Apuesta en Vivo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400,600,700;900&display=swap" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            -webkit-tap-highlight-color: transparent;
-        }
-        /* Ocultar flechas en inputs numéricos */
-        input[type="number"]::-webkit-inner-spin-button, 
-        input[type="number"]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b16">
+  <meta name="description" content="Marcador NBA en vivo y tracker de apuestas sincronizado con Firebase.">
+  <title>NBA Live · Marcador y apuestas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark}*{box-sizing:border-box}body{font-family:Inter,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;background:#070b16}button,input,select{font:inherit}button{touch-action:manipulation}.panel{background:linear-gradient(145deg,rgba(17,25,43,.97),rgba(10,15,28,.98));border:1px solid rgba(117,137,172,.18);box-shadow:0 18px 60px rgba(0,0,0,.18)}.field{width:100%;border:1px solid #29354b;background:#080e1b;color:#f8fafc;border-radius:12px;padding:12px 13px;font-size:13px;outline:none}.field:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(59,130,246,.13)}.btn-primary{background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;box-shadow:0 8px 25px rgba(37,99,235,.2)}.btn-primary:disabled{opacity:.55;cursor:wait}.smallcaps{font-size:9px;letter-spacing:.18em;text-transform:uppercase;font-weight:900}.status-dot{width:7px;height:7px;display:inline-block;border-radius:50%}.live-dot{background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,.1)}.offline-dot{background:#fb7185;box-shadow:0 0 0 4px rgba(251,113,133,.1)}.team-logo{width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 8px 16px rgba(0,0,0,.25))}.team-logo-small{width:30px;height:30px;object-fit:contain}.score-pop{animation:score-pop .48s cubic-bezier(.18,.89,.32,1.28)}@keyframes score-pop{0%{transform:scale(1);color:white}40%{transform:scale(1.28);color:#93c5fd;text-shadow:0 0 30px rgba(96,165,250,.65)}100%{transform:scale(1);color:white}}.triple-flash{animation:triple-flash .85s ease-out}@keyframes triple-flash{0%,100%{box-shadow:0 0 0 rgba(251,146,60,0)}25%{box-shadow:inset 0 0 0 2px rgba(251,146,60,.8),0 0 55px rgba(249,115,22,.28)}65%{box-shadow:inset 0 0 0 1px rgba(251,146,60,.32),0 0 24px rgba(249,115,22,.12)}}.triple-toast{animation:triple-toast 1.25s cubic-bezier(.18,.89,.32,1.28) both}@keyframes triple-toast{0%{opacity:0;transform:translate(-50%,12px) scale(.7)}18%{opacity:1;transform:translate(-50%,0) scale(1.08)}30%{transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-12px) scale(.95)}}.modal-backdrop{background:rgba(3,7,18,.83);backdrop-filter:blur(12px)}.safe{color:#6ee7b7}.warning{color:#fcd34d}.danger{color:#fda4af}.score-btn{transition:transform .12s,filter .12s}.score-btn:active{transform:scale(.94);filter:brightness(1.25)}.bet-row{background:rgba(7,12,24,.76)}.logo-fallback{display:grid;place-items:center;border-radius:50%;width:76px;height:76px;background:#172239;color:#cbd5e1;font-size:12px;font-weight:900}@media(max-width:400px){.team-logo{width:55px;height:55px}.logo-fallback{width:55px;height:55px}.score-number{font-size:54px!important}}
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white pb-32">
-
-    <!-- Top Navigation Header -->
-    <header class="w-full bg-slate-900 border-b border-slate-800 p-2 shadow-md sticky top-0 z-30">
-        <div class="max-w-md mx-auto flex items-center justify-between">
-            <div class="flex items-center space-x-2 truncate">
-                <div class="bg-indigo-600 p-1.5 rounded-lg text-white shrink-0 shadow-sm">
-                    <i class="fa-solid fa-bolt text-xs"></i>
-                </div>
-                <div class="truncate">
-                    <h1 class="text-xs font-bold tracking-tight truncate text-slate-100" id="activeMatchLabel">Partido Principal</h1>
-                    <p class="text-[9px] text-slate-400 font-medium">Tracker en Vivo</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-                <button onclick="openMatchesModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 transition-colors">
-                    <i class="fa-solid fa-list-check"></i> Partidos
-                </button>
-                <button onclick="openSettings()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 transition-colors">
-                    <i class="fa-solid fa-gear"></i> Ajustes
-                </button>
-                <button onclick="openAddBetModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-md shadow-indigo-900/20 transition-transform active:scale-95">
-                    <i class="fa-solid fa-plus"></i> Apuesta
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content Area (Compact and at the top) -->
-    <main class="w-full max-w-md mx-auto p-3 flex flex-col space-y-3 mt-1">
-        
-        <!-- TV-like Unified Panel Container for All Bets -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg shadow-black/40 space-y-2">
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-200">
-                    <i class="fa-solid fa-tv text-indigo-400 text-xs"></i> Tus Apuestas Activas
-                </div>
-                <div class="text-[10px] text-slate-400 font-medium bg-slate-950 px-2 py-1 rounded-md border border-slate-800">
-                    Total: <span id="headerTotalScore" class="font-bold text-indigo-400 text-xs ml-0.5">0</span> pts
-                </div>
-            </div>
-
-            <!-- List of all bets in this match -->
-            <div id="betsListContainer" class="divide-y divide-slate-800/50 flex flex-col gap-0.5">
-                <!-- Rendered dynamically -->
-            </div>
-        </div>
-
-        <!-- SCORE CONTROL PANEL (Right below bets, always visible) -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg shadow-black/40 space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                <span class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-gamepad text-indigo-400 text-xs"></i> Control de Marcador</span>
-                <span class="text-[9px] text-slate-400 font-medium">Toca para sumar</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <!-- Team 1 Control Box -->
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between shadow-inner">
-                    <div class="flex items-center justify-between mb-2">
-                        <input type="text" id="team1Name" onchange="updateTeamName(1, this.value)" value="Equipo A" class="bg-transparent font-bold text-slate-200 text-xs w-full focus:outline-none truncate" placeholder="Equipo A">
-                        <span id="team1Score" class="text-lg font-black text-indigo-400 pl-1 leading-none">0</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-4 gap-1.5">
-                        <button onclick="modifyScore(1, -1)" class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-slate-400 py-2 rounded-lg font-black text-sm flex items-center justify-center transition-colors">-</button>
-                        <button onclick="modifyScore(1, 1)" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-2 rounded-lg font-black text-sm flex items-center justify-center shadow transition-colors">+1</button>
-                        <button onclick="modifyScore(1, 2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+2</button>
-                        <button onclick="modifyScore(1, 3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+3</button>
-                    </div>
-                </div>
-
-                <!-- Team 2 Control Box -->
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between shadow-inner">
-                    <div class="flex items-center justify-between mb-2">
-                        <input type="text" id="team2Name" onchange="updateTeamName(2, this.value)" value="Equipo B" class="bg-transparent font-bold text-slate-200 text-xs w-full focus:outline-none truncate" placeholder="Equipo B">
-                        <span id="team2Score" class="text-lg font-black text-indigo-400 pl-1 leading-none">0</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-4 gap-1.5">
-                        <button onclick="modifyScore(2, -1)" class="bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-slate-400 py-2 rounded-lg font-black text-sm flex items-center justify-center transition-colors">-</button>
-                        <button onclick="modifyScore(2, 1)" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white py-2 rounded-lg font-black text-sm flex items-center justify-center shadow transition-colors">+1</button>
-                        <button onclick="modifyScore(2, 2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+2</button>
-                        <button onclick="modifyScore(2, 3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center transition-colors">+3</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Modal to Add / Edit a Bet -->
-    <div id="betModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 id="betModalTitle" class="font-bold text-sm text-white">Añadir Apuesta</h3>
-                <button onclick="closeAddBetModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tipo de Apuesta</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" id="typeUnderBtn" onclick="setBetType('under')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-900/30">UNDER</button>
-                    <button type="button" id="typeOverBtn" onclick="setBetType('over')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800">OVER</button>
-                    <button type="button" id="typeHandicapBtn" onclick="setBetType('handicap')" class="py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800">HÁNDICAP</button>
-                </div>
-            </div>
-
-            <div id="totalsConfigSection" class="space-y-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Línea Total</label>
-                    <input type="number" id="betLineInput" step="0.5" value="215.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                </div>
-            </div>
-
-            <div id="handicapConfigSection" class="hidden space-y-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Equipo a favor</label>
-                    <select id="handicapTeamSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none transition-all">
-                        <option value="1">Equipo A</option>
-                        <option value="2">Equipo B</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Línea Hándicap (ej: -3.0 o +14.5)</label>
-                    <input type="number" id="handicapValueInput" step="0.25" value="-3.0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nota (Opcional)</label>
-                <input type="text" id="betNoteInput" placeholder="Ej: Apuesta principal" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-            </div>
-
-            <button onclick="saveBet()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30 text-xs mt-2">
-                GUARDAR APUESTA
-            </button>
-        </div>
+<body class="min-h-screen pb-10 text-slate-100 selection:bg-blue-500 selection:text-white">
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/90 px-3 py-3 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
+      <div class="flex min-w-0 items-center gap-3"><div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-700 shadow-lg shadow-blue-950/50"><i class="fa-solid fa-basketball text-lg"></i></div><div class="min-w-0"><h1 class="truncate text-sm font-black tracking-tight sm:text-base">NBA <span class="text-blue-300">LIVE</span></h1><p class="text-[9px] font-bold uppercase tracking-[.2em] text-slate-500">Marcador · Tracker</p></div></div>
+      <div class="flex shrink-0 items-center gap-2"><div class="hidden items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-2 sm:flex"><span id="connectionDot" class="status-dot offline-dot"></span><span id="connectionText" class="text-[10px] font-bold text-slate-400">Conectando</span></div><button onclick="openMatchesModal()" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-[10px] font-extrabold text-slate-300 hover:bg-slate-800"><i class="fa-solid fa-list-check mr-1"></i>Partidos</button><button onclick="openCreateModal()" class="btn-primary rounded-xl px-3 py-2 text-[10px] font-black"><i class="fa-solid fa-plus mr-1"></i>Nuevo</button></div>
     </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-gear text-slate-400"></i> Configurar Partido</h3>
-                <button onclick="closeSettings()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre del Partido</label>
-                <input type="text" id="matchNameInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-            </div>
-
-            <div class="pt-3 border-t border-slate-800/80">
-                <label class="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-3"><i class="fa-solid fa-pen-to-square"></i> Marcador Inicial en Vivo</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-950 border border-slate-800 p-2 rounded-xl">
-                        <label id="labelTeam1Init" class="block text-[10px] text-slate-400 truncate mb-1 text-center font-semibold">Equipo A</label>
-                        <input type="number" id="initScore1Input" min="0" value="0" class="w-full bg-transparent text-center text-white font-black text-lg focus:outline-none">
-                    </div>
-                    <div class="bg-slate-950 border border-slate-800 p-2 rounded-xl">
-                        <label id="labelTeam2Init" class="block text-[10px] text-slate-400 truncate mb-1 text-center font-semibold">Equipo B</label>
-                        <input type="number" id="initScore2Input" min="0" value="0" class="w-full bg-transparent text-center text-white font-black text-lg focus:outline-none">
-                    </div>
-                </div>
-                <p class="text-[9px] text-slate-500 mt-2 text-center">Útil si empiezas a trackear un partido avanzado</p>
-            </div>
-
-            <button onclick="saveSettings()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-900/30 text-xs mt-2">
-                ACTUALIZAR PARTIDO
-            </button>
+  </header>
+  <main class="mx-auto max-w-6xl space-y-4 px-3 py-4 sm:px-5 sm:py-6">
+    <section id="noMatches" class="panel hidden rounded-3xl px-5 py-14 text-center sm:px-10"><div class="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-blue-400/20 bg-blue-500/10 text-3xl text-blue-300"><i class="fa-solid fa-basketball"></i></div><p class="smallcaps mt-5 text-blue-300">NBA live scoreboard</p><h2 class="mt-2 text-2xl font-black sm:text-3xl">Empieza a llevar el marcador</h2><p class="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">Crea un partido, selecciona los dos equipos NBA y actualiza cada punto en vivo. El marcador y las apuestas se guardan en Firebase.</p><button onclick="openCreateModal()" class="btn-primary mt-6 rounded-xl px-5 py-3 text-xs font-black"><i class="fa-solid fa-plus mr-2"></i>Crear primer partido</button></section>
+    <div id="appContent" class="hidden grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,.85fr)]">
+      <section class="min-w-0 space-y-4">
+        <div id="scoreboard" class="panel relative overflow-hidden rounded-3xl p-4 sm:p-6">
+          <div class="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-blue-500/[.07] blur-3xl"></div><div class="absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-orange-500/[.06] blur-3xl"></div>
+          <div class="relative flex items-start justify-between gap-3"><div class="min-w-0"><p class="smallcaps text-blue-300">Live game</p><h2 id="matchTitle" class="mt-1 truncate text-base font-black sm:text-lg">NBA Match</h2><p id="matchDateLabel" class="mt-1 text-[10px] text-slate-500">Sincronizando…</p></div><div class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2"><span class="status-dot live-dot"></span><span class="text-[9px] font-black uppercase tracking-widest text-slate-300">EN VIVO</span></div></div>
+          <div class="relative mt-7 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-5">
+            <div class="flex min-w-0 flex-col items-center text-center"><div class="grid h-[76px] w-[76px] place-items-center sm:h-[90px] sm:w-[90px]"><img id="homeLogo" class="team-logo" alt="Equipo local"><span id="homeFallback" class="logo-fallback" style="display:none">NBA</span></div><p id="homeName" class="mt-3 w-full truncate text-sm font-black sm:text-base">Equipo local</p><p id="homeCode" class="mt-1 text-[9px] font-extrabold tracking-widest text-slate-500">LOCAL</p></div>
+            <div class="flex min-w-0 flex-col items-center justify-center"><div class="flex items-center gap-3 sm:gap-5"><span id="homeScore" class="score-number text-6xl font-black leading-none tracking-tighter tabular-nums sm:text-7xl">0</span><span class="pb-1 text-2xl font-black text-slate-700">:</span><span id="awayScore" class="score-number text-6xl font-black leading-none tracking-tighter tabular-nums sm:text-7xl">0</span></div><p id="leaderText" class="mt-3 whitespace-nowrap text-[10px] font-black uppercase tracking-widest text-slate-400">Empate</p><div class="mt-3 flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950/80 px-3 py-1.5"><span class="text-[9px] font-bold text-slate-500">TOTAL</span><span id="totalScore" class="text-sm font-black text-orange-300 tabular-nums">0</span></div></div>
+            <div class="flex min-w-0 flex-col items-center text-center"><div class="grid h-[76px] w-[76px] place-items-center sm:h-[90px] sm:w-[90px]"><img id="awayLogo" class="team-logo" alt="Equipo visitante"><span id="awayFallback" class="logo-fallback" style="display:none">NBA</span></div><p id="awayName" class="mt-3 w-full truncate text-sm font-black sm:text-base">Equipo visitante</p><p id="awayCode" class="mt-1 text-[9px] font-extrabold tracking-widest text-slate-500">VISITANTE</p></div>
+          </div>
+          <div class="relative mt-6 flex flex-wrap items-center justify-center gap-2 border-y border-slate-800/80 py-3"><span class="mr-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Periodo</span><select id="periodSelect" onchange="changePeriod(this.value)" class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-black text-slate-200 outline-none"><option value="Pre">PREVIA</option><option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option><option value="OT">PRÓRROGA</option><option value="Final">FINAL</option></select><span id="periodSummary" class="text-[10px] font-black text-blue-300">PRE</span></div>
+          <div class="relative mt-5 grid grid-cols-2 gap-3">
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/65 p-3 sm:p-4"><div class="mb-3 flex items-center justify-between gap-2"><p id="homeControlLabel" class="truncate text-[10px] font-black uppercase tracking-wider text-slate-300">LOCAL</p><span class="text-[9px] text-slate-600">PUNTOS</span></div><div class="grid grid-cols-4 gap-1.5"><button onclick="modifyScore(1,-1)" class="score-btn rounded-lg border border-slate-700 bg-slate-900 py-2.5 text-sm font-black text-slate-400">−</button><button onclick="modifyScore(1,1)" class="score-btn rounded-lg border border-blue-400/30 bg-blue-500/15 py-2.5 text-xs font-black text-blue-200">+1</button><button onclick="modifyScore(1,2)" class="score-btn rounded-lg border border-blue-400/20 bg-blue-500/10 py-2.5 text-xs font-black text-blue-200">+2</button><button onclick="modifyScore(1,3)" class="score-btn rounded-lg border border-orange-400/40 bg-orange-400/15 py-2.5 text-xs font-black text-orange-200">+3</button></div></div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/65 p-3 sm:p-4"><div class="mb-3 flex items-center justify-between gap-2"><p id="awayControlLabel" class="truncate text-[10px] font-black uppercase tracking-wider text-slate-300">VISITANTE</p><span class="text-[9px] text-slate-600">PUNTOS</span></div><div class="grid grid-cols-4 gap-1.5"><button onclick="modifyScore(2,-1)" class="score-btn rounded-lg border border-slate-700 bg-slate-900 py-2.5 text-sm font-black text-slate-400">−</button><button onclick="modifyScore(2,1)" class="score-btn rounded-lg border border-blue-400/30 bg-blue-500/15 py-2.5 text-xs font-black text-blue-200">+1</button><button onclick="modifyScore(2,2)" class="score-btn rounded-lg border border-blue-400/20 bg-blue-500/10 py-2.5 text-xs font-black text-blue-200">+2</button><button onclick="modifyScore(2,3)" class="score-btn rounded-lg border border-orange-400/40 bg-orange-400/15 py-2.5 text-xs font-black text-orange-200">+3</button></div></div>
+          </div>
+          <div class="relative mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4"><div class="flex items-center gap-2 text-[10px] text-slate-500"><i class="fa-solid fa-cloud-arrow-up text-emerald-300"></i><span>Guardado automáticamente</span></div><button onclick="openCreateModal(true)" class="rounded-lg px-3 py-2 text-[10px] font-extrabold text-slate-400 hover:bg-slate-800 hover:text-white"><i class="fa-solid fa-arrows-rotate mr-1.5"></i>Cambiar equipos</button></div>
         </div>
+        <div class="panel rounded-2xl p-4"><div class="mb-3 flex items-center justify-between"><div><p class="smallcaps text-orange-300">Seguimiento</p><h3 class="mt-1 text-sm font-extrabold">Apuestas activas</h3></div><span id="betCount" class="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs font-black">0</span></div><div id="betsList" class="space-y-2"></div><button onclick="openBetModal()" class="mt-3 w-full rounded-xl border border-dashed border-slate-600 bg-slate-950/50 px-4 py-3 text-xs font-extrabold text-slate-300 hover:border-blue-400/50 hover:text-white"><i class="fa-solid fa-plus mr-2 text-blue-300"></i>Añadir apuesta</button></div>
+      </section>
+      <aside class="min-w-0 space-y-4">
+        <div class="panel rounded-2xl p-4"><div class="mb-3 flex items-center justify-between"><div><p class="smallcaps text-slate-500">En esta sesión</p><h3 class="mt-1 text-sm font-extrabold">Resumen del juego</h3></div><i class="fa-solid fa-chart-simple text-lg text-blue-300"></i></div><div class="grid grid-cols-2 gap-3"><div class="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p class="text-[10px] font-bold text-slate-500">Diferencia</p><p id="scoreDiff" class="mt-1 text-xl font-black">0</p><p id="leaderText2" class="mt-1 truncate text-[10px] text-slate-500">Empate</p></div><div class="rounded-xl border border-slate-800 bg-slate-950/70 p-3"><p class="text-[10px] font-bold text-slate-500">Periodo</p><p id="periodSummary2" class="mt-1 text-xl font-black">PRE</p><p class="mt-1 text-[10px] text-slate-500">Editable en el marcador</p></div></div></div>
+        <div class="panel rounded-2xl p-4"><div class="mb-3 flex items-center justify-between"><div><p class="smallcaps text-slate-500">Administra</p><h3 class="mt-1 text-sm font-extrabold">Partidos guardados</h3></div><button onclick="openMatchesModal()" class="text-[10px] font-extrabold text-blue-300 hover:text-blue-200">Ver todos <i class="fa-solid fa-arrow-right ml-1"></i></button></div><div id="quickMatches" class="space-y-2"></div></div>
+        <div class="rounded-2xl border border-amber-400/20 bg-amber-400/[.06] p-4"><div class="flex items-start gap-3"><i class="fa-solid fa-shield-halved mt-0.5 text-amber-300"></i><div><h3 class="text-xs font-extrabold text-amber-100">Estado de sincronización</h3><p id="syncHint" class="mt-1 text-[11px] leading-relaxed text-slate-400">Conectando con Firestore…</p></div></div></div>
+      </aside>
     </div>
+    <footer class="pb-3 text-center text-[10px] text-slate-600">NBA LIVE · Actualización compartida por Firebase Firestore</footer>
+  </main>
 
-    <!-- Matches Manager Modal -->
-    <div id="matchesModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div class="flex items-center justify-between">
-                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-list-check text-slate-400"></i> Partidos Guardados</h3>
-                <button onclick="closeMatchesModal()" class="text-slate-400 hover:text-white p-1 rounded-lg transition-colors">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <div class="flex gap-2">
-                <input type="text" id="newMatchNameInput" placeholder="Ej: Lakers vs Celtics" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                <button onclick="addNewMatch()" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white px-4 py-3 rounded-xl text-xs font-black transition-all shadow-md">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
-            </div>
-
-            <div id="matchesListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar"></div>
-        </div>
-    </div>
-
-    <script>
-        let matches = [
-            {
-                id: '1',
-                name: 'Partido Principal',
-                team1Name: 'Equipo A',
-                team2Name: 'Equipo B',
-                score1: 0,
-                score2: 0,
-                bets: [
-                    { id: 'b1', type: 'under', betLine: 215.5, note: 'Línea Under Principal' }
-                ]
-            }
-        ];
-        let activeMatchId = '1';
-        let editingBetId = null;
-
-        window.onload = function() {
-            loadFromSession();
-            renderUI();
-        };
-
-        function getActiveMatch() {
-            return matches.find(m => m.id === activeMatchId) || matches[0];
-        }
-
-        function saveToSession() {
-            sessionStorage.setItem('live_tracker_matches', JSON.stringify(matches));
-            sessionStorage.setItem('live_tracker_active', activeMatchId);
-        }
-
-        function loadFromSession() {
-            const savedMatches = sessionStorage.getItem('live_tracker_matches');
-            const savedActive = sessionStorage.getItem('live_tracker_active');
-            if (savedMatches) {
-                try { 
-                    matches = JSON.parse(savedMatches); 
-                    matches.forEach(m => {
-                        if (!m.bets) {
-                            m.bets = [];
-                        }
-                    });
-                } catch(e){}
-            }
-            if (savedActive) activeMatchId = savedActive;
-        }
-
-        function modifyScore(team, amount) {
-            let m = getActiveMatch();
-            if (team === 1) m.score1 = Math.max(0, m.score1 + amount);
-            else m.score2 = Math.max(0, m.score2 + amount);
-            saveToSession();
-            renderUI();
-        }
-
-        function updateTeamName(team, val) {
-            let m = getActiveMatch();
-            if (team === 1) m.team1Name = val || 'Equipo A';
-            else m.team2Name = val || 'Equipo B';
-            saveToSession();
-            renderUI();
-        }
-
-        function renderUI() {
-            let m = getActiveMatch();
-            
-            document.getElementById('team1Name').value = m.team1Name;
-            document.getElementById('team2Name').value = m.team2Name;
-            document.getElementById('team1Score').innerText = m.score1;
-            document.getElementById('team2Score').innerText = m.score2;
-            document.getElementById('activeMatchLabel').innerText = m.name;
-            document.getElementById('headerTotalScore').innerText = m.score1 + m.score2;
-
-            renderBetsList(m);
-        }
-
-        function renderBetsList(m) {
-            const container = document.getElementById('betsListContainer');
-            container.innerHTML = '';
-
-            if (!m.bets || m.bets.length === 0) {
-                container.innerHTML = `<div class="py-4 text-center text-[11px] font-medium text-slate-500 bg-slate-950/50 rounded-lg border border-slate-800/50 border-dashed">No hay apuestas activas. Presiona + Apuesta.</div>`;
-                return;
-            }
-
-            const totalScore = m.score1 + m.score2;
-
-            m.bets.forEach((bet) => {
-                const row = document.createElement('div');
-                row.className = "py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3";
-                
-                let titleHTML = '';
-                let statusHTML = '';
-
-                if (bet.type === 'under' || bet.type === 'over') {
-                    const isUnder = bet.type === 'under';
-                    const line = bet.betLine;
-                    const diff = isUnder ? (line - totalScore) : (totalScore - line);
-                    
-                    titleHTML = `<span class="text-xs font-black text-slate-100 tracking-wide">${isUnder ? 'UNDER' : 'OVER'} ${line}</span> <span class="text-[10px] text-slate-400 font-medium ml-1">(${bet.note || ''})</span>`;
-
-                    if (isUnder) {
-                        if (totalScore >= line) {
-                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
-                        } else {
-                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
-                        }
-                    } else { // Over
-                        if (totalScore >= line) {
-                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
-                        } else {
-                            statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
-                        }
-                    }
-
-                } else { // Handicap
-                    const teamName = bet.handicapTeam == 1 ? m.team1Name : m.team2Name;
-                    const hVal = bet.handicapValue;
-                    const signStr = hVal >= 0 ? `+${hVal}` : `${hVal}`;
-                    
-                    let adjustedDiff = bet.handicapTeam == 1 ? (m.score1 + hVal) - m.score2 : (m.score2 + hVal) - m.score1;
-
-                    titleHTML = `<span class="text-xs font-black text-slate-100 tracking-wide">HAP ${teamName} <span class="text-indigo-400">${signStr}</span></span> <span class="text-[10px] text-slate-400 font-medium ml-1">(${bet.note || ''})</span>`;
-                    
-                    if (adjustedDiff > 0) {
-                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wider">VERDE</span>`;
-                    } else if (adjustedDiff === 0) {
-                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 tracking-wider">PUSH</span>`;
-                    } else {
-                        statusHTML = `<span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-500/10 text-red-400 border border-red-500/20 tracking-wider">ROJO</span>`;
-                    }
-                }
-
-                row.innerHTML = `
-                    <div class="truncate flex-1">
-                        <div class="truncate">${titleHTML}</div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        ${statusHTML}
-                        <div class="flex items-center gap-1 border-l border-slate-800 pl-2">
-                            <button onclick="editBet('${bet.id}')" class="text-slate-500 hover:text-white p-1 transition-colors"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                            <button onclick="deleteBet('${bet.id}')" class="text-slate-600 hover:text-red-400 p-1 transition-colors"><i class="fa-solid fa-trash text-[10px]"></i></button>
-                        </div>
-                    </div>
-                `;
-
-                container.appendChild(row);
-            });
-        }
-
-        function openAddBetModal() {
-            editingBetId = null;
-            document.getElementById('betModalTitle').innerText = "Añadir Apuesta";
-            document.getElementById('betLineInput').value = "215.5";
-            document.getElementById('handicapValueInput').value = "-3.0";
-            document.getElementById('betNoteInput').value = "";
-            populateHandicapSelect();
-            setBetType('under');
-            document.getElementById('betModal').classList.remove('hidden');
-        }
-
-        function editBet(betId) {
-            let m = getActiveMatch();
-            let bet = m.bets.find(b => b.id === betId);
-            if (!bet) return;
-
-            editingBetId = betId;
-            document.getElementById('betModalTitle').innerText = "Editar Apuesta";
-            document.getElementById('betNoteInput').value = bet.note || "";
-            populateHandicapSelect();
-
-            if (bet.type === 'handicap') {
-                setBetType('handicap');
-                document.getElementById('handicapValueInput').value = bet.handicapValue;
-                document.getElementById('handicapTeamSelect').value = bet.handicapTeam;
-            } else {
-                setBetType(bet.type);
-                document.getElementById('betLineInput').value = bet.betLine;
-            }
-
-            document.getElementById('betModal').classList.remove('hidden');
-        }
-
-        function closeAddBetModal() {
-            document.getElementById('betModal').classList.add('hidden');
-        }
-
-        function populateHandicapSelect() {
-            let m = getActiveMatch();
-            const teamSelect = document.getElementById('handicapTeamSelect');
-            teamSelect.innerHTML = `<option value="1">${m.team1Name}</option><option value="2">${m.team2Name}</option>`;
-        }
-
-        let tempBetType = 'under';
-        function setBetType(type) {
-            tempBetType = type;
-            const uBtn = document.getElementById('typeUnderBtn');
-            const oBtn = document.getElementById('typeOverBtn');
-            const hBtn = document.getElementById('typeHandicapBtn');
-            const totalsSec = document.getElementById('totalsConfigSection');
-            const handicapSec = document.getElementById('handicapConfigSection');
-
-            const inactiveClass = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-slate-950 text-slate-400 border-slate-800";
-
-            uBtn.className = inactiveClass;
-            oBtn.className = inactiveClass;
-            hBtn.className = inactiveClass;
-
-            if (type === 'under') {
-                uBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-900/30";
-                totalsSec.classList.remove('hidden');
-                handicapSec.classList.add('hidden');
-            } else if (type === 'over') {
-                oBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-900/30";
-                totalsSec.classList.remove('hidden');
-                handicapSec.classList.add('hidden');
-            } else {
-                hBtn.className = "py-2 rounded-xl font-bold text-[10px] transition-all border bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-900/30";
-                totalsSec.classList.add('hidden');
-                handicapSec.classList.remove('hidden');
-            }
-        }
-
-        function saveBet() {
-            let m = getActiveMatch();
-            const noteVal = document.getElementById('betNoteInput').value.trim();
-            const val = parseFloat(document.getElementById('betLineInput').value);
-            const hVal = parseFloat(document.getElementById('handicapValueInput').value);
-            const hTeam = parseInt(document.getElementById('handicapTeamSelect').value);
-
-            if (!m.bets) m.bets = [];
-
-            if (editingBetId) {
-                let bet = m.bets.find(b => b.id === editingBetId);
-                if (bet) {
-                    bet.type = tempBetType;
-                    bet.note = noteVal;
-                    if (tempBetType === 'handicap') {
-                        bet.handicapValue = isNaN(hVal) ? -3.0 : hVal;
-                        bet.handicapTeam = hTeam;
-                    } else {
-                        bet.betLine = isNaN(val) ? 215.5 : val;
-                    }
-                }
-            } else {
-                const newBet = {
-                    id: 'b_' + Date.now(),
-                    type: tempBetType,
-                    note: noteVal
-                };
-                if (tempBetType === 'handicap') {
-                    newBet.handicapValue = isNaN(hVal) ? -3.0 : hVal;
-                    newBet.handicapTeam = hTeam;
-                } else {
-                    newBet.betLine = isNaN(val) ? 215.5 : val;
-                }
-                m.bets.push(newBet);
-            }
-
-            saveToSession();
-            renderUI();
-            closeAddBetModal();
-        }
-
-        function deleteBet(betId) {
-            let m = getActiveMatch();
-            m.bets = m.bets.filter(b => b.id !== betId);
-            saveToSession();
-            renderUI();
-        }
-
-        function openSettings() {
-            let m = getActiveMatch();
-            document.getElementById('matchNameInput').value = m.name;
-            document.getElementById('initScore1Input').value = m.score1;
-            document.getElementById('initScore2Input').value = m.score2;
-            document.getElementById('labelTeam1Init').innerText = m.team1Name;
-            document.getElementById('labelTeam2Init').innerText = m.team2Name;
-            document.getElementById('settingsModal').classList.remove('hidden');
-        }
-
-        function closeSettings() {
-            document.getElementById('settingsModal').classList.add('hidden');
-        }
-
-        function saveSettings() {
-            let m = getActiveMatch();
-            const nameVal = document.getElementById('matchNameInput').value.trim();
-            const init1 = parseInt(document.getElementById('initScore1Input').value);
-            const init2 = parseInt(document.getElementById('initScore2Input').value);
-
-            if (nameVal) m.name = nameVal;
-            if (!isNaN(init1) && init1 >= 0) m.score1 = init1;
-            if (!isNaN(init2) && init2 >= 0) m.score2 = init2;
-
-            saveToSession();
-            renderUI();
-            closeSettings();
-        }
-
-        function openMatchesModal() {
-            renderMatchesList();
-            document.getElementById('matchesModal').classList.remove('hidden');
-        }
-
-        function closeMatchesModal() {
-            document.getElementById('matchesModal').classList.add('hidden');
-        }
-
-        function renderMatchesList() {
-            const container = document.getElementById('matchesListContainer');
-            container.innerHTML = '';
-
-            matches.forEach(m => {
-                const isActive = m.id === activeMatchId;
-                const div = document.createElement('div');
-                div.className = `p-3 rounded-xl border flex items-center justify-between transition-all ${isActive ? 'bg-indigo-950/30 border-indigo-500/40 shadow-sm' : 'bg-slate-950 border-slate-800'}`;
-                
-                div.innerHTML = `
-                    <div class="cursor-pointer flex-1 truncate pr-2" onclick="switchMatch('${m.id}')">
-                        <div class="font-bold text-sm text-white flex items-center gap-2">
-                            ${m.name} 
-                            ${isActive ? '<span class="text-[9px] font-black bg-indigo-600 text-white px-1.5 py-0.5 rounded tracking-wide">ACTIVO</span>' : ''}
-                        </div>
-                        <div class="text-[11px] text-slate-400 mt-0.5">${m.team1Name} vs ${m.team2Name}</div>
-                    </div>
-                    <button onclick="deleteMatch('${m.id}')" class="text-slate-600 hover:text-red-400 p-2 transition-colors" ${matches.length <= 1 ? 'disabled style="opacity:0.3"' : ''}>
-                        <i class="fa-solid fa-trash text-sm"></i>
-                    </button>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function addNewMatch() {
-            const input = document.getElementById('newMatchNameInput');
-            const name = input.value.trim() || `Partido ${matches.length + 1}`;
-            const newId = 'm_' + Date.now();
-
-            matches.push({
-                id: newId,
-                name: name,
-                team1Name: 'Equipo A',
-                team2Name: 'Equipo B',
-                score1: 0,
-                score2: 0,
-                bets: []
-            });
-
-            activeMatchId = newId;
-            input.value = '';
-            saveToSession();
-            renderMatchesList();
-            renderUI();
-        }
-
-        function switchMatch(id) {
-            activeMatchId = id;
-            saveToSession();
-            closeMatchesModal();
-            renderUI();
-        }
-
-        function deleteMatch(id) {
-            if (matches.length <= 1) return;
-            matches = matches.filter(m => m.id !== id);
-            if (activeMatchId === id) activeMatchId = matches[0].id;
-            saveToSession();
-            renderMatchesList();
-            renderUI();
-        }
-    </script>
+  <div id="createModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4"><div class="panel w-full max-w-lg rounded-3xl p-5 sm:p-6"><div class="mb-5 flex items-center justify-between"><div><p class="smallcaps text-orange-300">Game setup</p><h3 id="createModalTitle" class="mt-1 text-lg font-black">Crear partido NBA</h3></div><button onclick="closeModal('createModal')" class="grid h-9 w-9 place-items-center rounded-xl bg-slate-800 text-slate-300"><i class="fa-solid fa-xmark"></i></button></div><form id="createForm" class="space-y-4"><div><label class="mb-2 block text-xs font-bold text-slate-400">Nombre del partido (opcional)</label><input id="newMatchName" class="field" maxlength="70" placeholder="Ej. Partido de la noche"></div><div class="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><label class="mb-2 block text-xs font-bold text-slate-400">Equipo local</label><select id="newHomeTeam" class="field"></select></div><div><label class="mb-2 block text-xs font-bold text-slate-400">Equipo visitante</label><select id="newAwayTeam" class="field"></select></div></div><p id="matchFormHint" class="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-[11px] leading-relaxed text-slate-500">Elige dos equipos diferentes.</p><div class="flex gap-2 pt-1"><button type="button" onclick="closeModal('createModal')" class="flex-1 rounded-xl border border-slate-700 px-4 py-3 text-xs font-extrabold text-slate-300">Cancelar</button><button id="createSubmit" type="submit" class="btn-primary flex-1 rounded-xl px-4 py-3 text-xs font-extrabold">Crear partido</button></div></form></div></div>
+  <div id="matchesModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4"><div class="panel flex max-h-[85vh] w-full max-w-lg flex-col rounded-3xl p-5 sm:p-6"><div class="mb-4 flex items-center justify-between"><div><p class="smallcaps text-orange-300">Library</p><h3 class="mt-1 text-lg font-black">Tus partidos</h3></div><button onclick="closeModal('matchesModal')" class="grid h-9 w-9 place-items-center rounded-xl bg-slate-800 text-slate-300"><i class="fa-solid fa-xmark"></i></button></div><button onclick="openCreateModal()" class="mb-3 w-full rounded-xl border border-dashed border-slate-600 bg-slate-950/50 px-4 py-3 text-xs font-extrabold text-slate-200 hover:border-orange-300/60"><i class="fa-solid fa-plus mr-2 text-orange-300"></i>Crear otro partido</button><div id="matchesList" class="space-y-2 overflow-y-auto pr-1"></div></div></div>
+  <div id="betModal" class="modal-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4"><div class="panel w-full max-w-md rounded-3xl p-5 sm:p-6"><div class="mb-5 flex items-center justify-between"><div><p class="smallcaps text-blue-300">Live tracker</p><h3 id="betModalTitle" class="mt-1 text-lg font-black">Añadir apuesta</h3></div><button onclick="closeModal('betModal')" class="grid h-9 w-9 place-items-center rounded-xl bg-slate-800 text-slate-300"><i class="fa-solid fa-xmark"></i></button></div><form id="betForm" class="space-y-4"><div class="grid grid-cols-3 gap-2"><button type="button" data-bet-type="under" onclick="setBetType('under')" class="bet-type rounded-xl border border-blue-400 bg-blue-500/20 py-2.5 text-[10px] font-black text-blue-200">MENOS</button><button type="button" data-bet-type="over" onclick="setBetType('over')" class="bet-type rounded-xl border border-slate-700 bg-slate-950 py-2.5 text-[10px] font-black text-slate-400">MÁS</button><button type="button" data-bet-type="handicap" onclick="setBetType('handicap')" class="bet-type rounded-xl border border-slate-700 bg-slate-950 py-2.5 text-[10px] font-black text-slate-400">HÁNDICAP</button></div><div id="totalFields"><label class="mb-2 block text-xs font-bold text-slate-400">Línea de puntos totales</label><input id="betLine" class="field" type="number" min="0" step="0.5" value="215.5" required></div><div id="handicapFields" class="hidden space-y-3"><div><label class="mb-2 block text-xs font-bold text-slate-400">Equipo al que aplicas el hándicap</label><select id="handicapTeam" class="field"></select></div><div><label class="mb-2 block text-xs font-bold text-slate-400">Línea (ej. -4.5 o +3.5)</label><input id="handicapLine" class="field" type="number" step="0.5" value="-3.5"></div></div><div><label class="mb-2 block text-xs font-bold text-slate-400">Nota (opcional)</label><input id="betNote" class="field" maxlength="80" placeholder="Ej. Total del partido"></div><div class="flex gap-2 pt-1"><button type="button" onclick="closeModal('betModal')" class="flex-1 rounded-xl border border-slate-700 px-4 py-3 text-xs font-extrabold text-slate-300">Cancelar</button><button id="betSubmit" type="submit" class="btn-primary flex-1 rounded-xl px-4 py-3 text-xs font-extrabold">Guardar apuesta</button></div></form></div></div>
+  <div id="tripleToast" class="pointer-events-none fixed bottom-24 left-1/2 z-[90] hidden rounded-2xl border border-orange-300/50 bg-orange-500 px-6 py-3 text-sm font-black text-white shadow-2xl shadow-orange-900/50"></div>
+  <div id="toast" class="fixed bottom-5 left-1/2 z-[80] hidden -translate-x-1/2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-xs font-bold shadow-2xl"></div>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+    import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+    const firebaseConfig = {apiKey:'AIzaSyCm94vUK2ye77zMDg9ewEiXwjXGWtzYuOI',authDomain:'nba-marcador.firebaseapp.com',projectId:'nba-marcador',storageBucket:'nba-marcador.firebasestorage.app',messagingSenderId:'827566831621',appId:'1:827566831621:web:2119797d71a45db74f046c'};
+    const app=initializeApp(firebaseConfig),db=getFirestore(app);
+    const TEAMS=[
+      {id:'ATL',name:'Atlanta Hawks',n:'1610612737'},{id:'BOS',name:'Boston Celtics',n:'1610612738'},{id:'BKN',name:'Brooklyn Nets',n:'1610612751'},{id:'CHA',name:'Charlotte Hornets',n:'1610612766'},{id:'CHI',name:'Chicago Bulls',n:'1610612741'},{id:'CLE',name:'Cleveland Cavaliers',n:'1610612739'},{id:'DAL',name:'Dallas Mavericks',n:'1610612742'},{id:'DEN',name:'Denver Nuggets',n:'1610612743'},{id:'DET',name:'Detroit Pistons',n:'1610612765'},{id:'GSW',name:'Golden State Warriors',n:'1610612744'},{id:'HOU',name:'Houston Rockets',n:'1610612745'},{id:'IND',name:'Indiana Pacers',n:'1610612754'},{id:'LAC',name:'LA Clippers',n:'1610612746'},{id:'LAL',name:'Los Angeles Lakers',n:'1610612747'},{id:'MEM',name:'Memphis Grizzlies',n:'1610612763'},{id:'MIA',name:'Miami Heat',n:'1610612748'},{id:'MIL',name:'Milwaukee Bucks',n:'1610612749'},{id:'MIN',name:'Minnesota Timberwolves',n:'1610612750'},{id:'NOP',name:'New Orleans Pelicans',n:'1610612740'},{id:'NYK',name:'New York Knicks',n:'1610612752'},{id:'OKC',name:'Oklahoma City Thunder',n:'1610612760'},{id:'ORL',name:'Orlando Magic',n:'1610612753'},{id:'PHI',name:'Philadelphia 76ers',n:'1610612755'},{id:'PHX',name:'Phoenix Suns',n:'1610612756'},{id:'POR',name:'Portland Trail Blazers',n:'1610612757'},{id:'SAC',name:'Sacramento Kings',n:'1610612758'},{id:'SAS',name:'San Antonio Spurs',n:'1610612759'},{id:'TOR',name:'Toronto Raptors',n:'1610612761'},{id:'UTA',name:'Utah Jazz',n:'1610612762'},{id:'WAS',name:'Washington Wizards',n:'1610612764'}
+    ];
+    const periods={Pre:'PREVIA',Q1:'Q1',Q2:'Q2',Q3:'Q3',Q4:'Q4',OT:'PRÓRROGA',Final:'FINAL'};
+    let matches=[],activeMatchId=localStorage.getItem('nba_active_match_id')||null,editingMatchId=null,currentBetType='under',editingBetId=null,isBusy=false;
+    const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),teamById=id=>TEAMS.find(t=>t.id===id)||{id:id||'NBA',name:id||'Equipo',n:''},logoUrl=t=>'https://cdn.nba.com/logos/nba/'+t.n+'/primary/L/logo.svg',activeMatch=()=>matches.find(m=>m.id===activeMatchId)||matches[0]||null,fmt=n=>Number.isInteger(n)?String(n):Number(n).toFixed(1).replace(/\.0$/,'');
+    function showToast(message,error=false){const el=$('toast');el.textContent=message;el.className='fixed bottom-5 left-1/2 z-[80] -translate-x-1/2 rounded-xl border px-4 py-3 text-xs font-bold shadow-2xl '+(error?'border-red-400/40 bg-red-950 text-red-100':'border-slate-700 bg-slate-900 text-slate-100');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>el.classList.add('hidden'),3300);}
+    function setConnection(ok,message){$('connectionDot').className='status-dot '+(ok?'live-dot':'offline-dot');$('connectionText').textContent=ok?'Conectado':'Sin conexión';$('syncHint').textContent=message;}
+    function logoMarkup(t){return '<img src="'+logoUrl(t)+'" class="team-logo-small" alt="'+esc(t.name)+'" onerror="this.style.display=\'none\'">';}
+    function populateTeamSelectors(){const options=[...TEAMS].sort((a,b)=>a.name.localeCompare(b.name)).map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');$('newHomeTeam').innerHTML=options;$('newAwayTeam').innerHTML=options;$('newHomeTeam').value='BOS';$('newAwayTeam').value='LAL';}
+    function setLogo(side,t){const img=$(side+'Logo'),fallback=$(side+'Fallback');img.onerror=()=>{img.classList.add('hidden');fallback.style.display='grid';fallback.textContent=t.id;};img.src=logoUrl(t);img.classList.remove('hidden');fallback.style.display='none';}
+    function render(){
+      const m=activeMatch();$('noMatches').classList.toggle('hidden',!!m);$('appContent').classList.toggle('hidden',!m);$('appContent').classList.toggle('grid',!!m);
+      if(!m){$('quickMatches').innerHTML='<p class="text-xs text-slate-500">Crea el primer partido para comenzar.</p>';return;}
+      const h=teamById(m.homeTeamId),a=teamById(m.awayTeamId),s1=Number(m.score1||0),s2=Number(m.score2||0),diff=s1-s2;
+      $('matchTitle').textContent=m.name||(h.name+' vs '+a.name);$('matchDateLabel').textContent=m.updatedAt?'Cambios sincronizados con Firebase':'Marcador en directo';
+      $('homeName').textContent=h.name;$('homeCode').textContent='LOCAL · '+h.id;$('awayName').textContent=a.name;$('awayCode').textContent='VISITANTE · '+a.id;$('homeControlLabel').textContent=h.id+' · '+h.name;$('awayControlLabel').textContent=a.id+' · '+a.name;setLogo('home',h);setLogo('away',a);
+      $('homeScore').textContent=s1;$('awayScore').textContent=s2;$('totalScore').textContent=s1+s2;$('periodSelect').value=m.period||'Pre';$('periodSummary').textContent=periods[m.period||'Pre']||m.period;$('periodSummary2').textContent=periods[m.period||'Pre']||m.period;
+      $('scoreDiff').textContent=(diff>0?'+':'')+diff;$('scoreDiff').className='mt-1 text-xl font-black '+(diff>0?'text-emerald-300':diff<0?'text-red-300':'text-slate-100');$('leaderText').textContent=diff===0?'Empate':(diff>0?h.name+' arriba':a.name+' arriba');$('leaderText2').textContent=diff===0?'Empate':(diff>0?h.id+' arriba':a.id+' arriba');
+      $('betCount').textContent=(m.bets||[]).length;renderBets(m);renderQuickMatches();renderMatchesList();
+    }
+    async function submitCreate(event){
+      event.preventDefault();if(isBusy)return;const homeId=$('newHomeTeam').value,awayId=$('newAwayTeam').value;if(homeId===awayId){showToast('Selecciona dos equipos diferentes.','error');return;}
+      const name=$('newMatchName').value.trim()||teamById(homeId).name+' vs '+teamById(awayId).name;isBusy=true;$('createSubmit').disabled=true;
+      try{
+        if(editingMatchId){await updateDoc(doc(db,'nbaMatches',editingMatchId),{name,homeTeamId:homeId,awayTeamId:awayId,updatedAt:serverTimestamp()});activeMatchId=editingMatchId;localStorage.setItem('nba_active_match_id',activeMatchId);showToast('Equipos actualizados.');}
+        else{const created=await addDoc(collection(db,'nbaMatches'),{name,homeTeamId:homeId,awayTeamId:awayId,score1:0,score2:0,period:'Pre',bets:[],createdAt:serverTimestamp(),updatedAt:serverTimestamp()});activeMatchId=created.id;localStorage.setItem('nba_active_match_id',activeMatchId);showToast('Partido creado y guardado en Firebase.');}
+        editingMatchId=null;closeModal('createModal');$('newMatchName').value='';
+      }catch(error){console.error(error);showToast(firebaseError(error),'error');}finally{isBusy=false;$('createSubmit').disabled=false;$('createSubmit').textContent=editingMatchId?'Guardar cambios':'Crear partido';}
+    }
+    function openCreateModal(edit=false){editingMatchId=edit?activeMatch()?.id:null;const m=edit?activeMatch():null;$('createModalTitle').textContent=m?'Cambiar equipos':'Crear partido NBA';$('createSubmit').textContent=m?'Guardar cambios':'Crear partido';$('newMatchName').value=m?.name||'';$('newHomeTeam').value=m?.homeTeamId||'BOS';$('newAwayTeam').value=m?.awayTeamId||'LAL';$('matchFormHint').textContent=m?'Cambiar los equipos conserva el marcador y las apuestas del partido.':'Elige dos equipos diferentes.';openModal('createModal');}
+    async function modifyScore(team,amount){const m=activeMatch();if(!m||isBusy)return;const field=team===1?'score1':'score2';try{await runTransaction(db,async tx=>{const ref=doc(db,'nbaMatches',m.id),snap=await tx.get(ref);if(!snap.exists())throw new Error('El partido ya no existe.');tx.update(ref,{[field]:Math.max(0,Number(snap.data()[field]||0)+amount),updatedAt:serverTimestamp()});});const score=$(team===1?'homeScore':'awayScore');score.classList.remove('score-pop');void score.offsetWidth;score.classList.add('score-pop');if(amount===3){const board=$('scoreboard'),toast=$('tripleToast');board.classList.remove('triple-flash');void board.offsetWidth;board.classList.add('triple-flash');toast.textContent='🏀 +3 TRIPLE';toast.classList.remove('hidden');toast.classList.remove('triple-toast');void toast.offsetWidth;toast.classList.add('triple-toast');setTimeout(()=>board.classList.remove('triple-flash'),900);setTimeout(()=>{toast.classList.add('hidden');toast.classList.remove('triple-toast');},1300);}}catch(error){console.error(error);showToast(firebaseError(error),'error');}}
+    async function changePeriod(period){const m=activeMatch();if(!m)return;try{await updateDoc(doc(db,'nbaMatches',m.id),{period,updatedAt:serverTimestamp()});}catch(error){showToast(firebaseError(error),'error');}}
+    function renderQuickMatches(){const m=activeMatch();$('quickMatches').innerHTML=matches.length?[...matches].slice(0,6).map(x=>{const h=teamById(x.homeTeamId),a=teamById(x.awayTeamId),active=x.id===m?.id;return '<button onclick="switchMatch(\''+esc(x.id)+'\')" class="flex w-full items-center justify-between gap-2 rounded-xl border '+(active?'border-blue-400/40 bg-blue-500/[.08]':'border-slate-800 bg-slate-950/50')+' p-3 text-left"><div class="flex min-w-0 items-center gap-2">'+logoMarkup(h)+'<div class="min-w-0"><p class="truncate text-[11px] font-extrabold">'+esc(h.id)+' <span class="text-slate-600">vs</span> '+esc(a.id)+'</p><p class="truncate text-[10px] text-slate-500">'+esc(x.name||h.name+' vs '+a.name)+'</p></div></div><div class="shrink-0 text-right"><p class="text-sm font-black tabular-nums">'+Number(x.score1||0)+' : '+Number(x.score2||0)+'</p><p class="text-[9px] font-bold text-slate-500">'+esc(periods[x.period||'Pre']||x.period||'PRE')+'</p></div></button>';}).join(''):'<p class="text-xs text-slate-500">Crea un partido para empezar.</p>';}
+    function renderMatchesList(){const c=$('matchesList');if(!matches.length){c.innerHTML='<p class="p-4 text-center text-xs text-slate-500">No hay partidos guardados.</p>';return;}c.innerHTML=matches.map(x=>{const h=teamById(x.homeTeamId),a=teamById(x.awayTeamId),active=x.id===activeMatchId;return '<div class="flex items-center gap-3 rounded-2xl border '+(active?'border-blue-400/40 bg-blue-500/[.08]':'border-slate-800 bg-slate-950/55')+' p-3"><button class="flex min-w-0 flex-1 items-center gap-3 text-left" onclick="switchMatch(\''+esc(x.id)+'\')"><div class="flex -space-x-2">'+logoMarkup(h)+logoMarkup(a)+'</div><div class="min-w-0 flex-1"><p class="truncate text-xs font-extrabold">'+esc(x.name||h.name+' vs '+a.name)+'</p><p class="mt-1 truncate text-[10px] text-slate-500">'+esc(h.name)+' vs '+esc(a.name)+'</p><p class="mt-1 text-[10px] font-bold '+(active?'text-blue-300':'text-slate-600')+'">'+(active?'● PARTIDO ACTIVO':'PULSA PARA ABRIR')+'</p></div><div class="shrink-0 text-right"><p class="text-base font-black tabular-nums">'+Number(x.score1||0)+' : '+Number(x.score2||0)+'</p><p class="text-[9px] font-bold text-slate-500">'+esc(periods[x.period||'Pre']||x.period||'PRE')+'</p></div></button><button title="Eliminar partido" onclick="deleteMatch(\''+esc(x.id)+'\')" class="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-600 hover:bg-red-500/10 hover:text-red-300"><i class="fa-solid fa-trash-can text-xs"></i></button></div>';}).join('');}
+    function openMatchesModal(){renderMatchesList();openModal('matchesModal');}
+    async function deleteMatch(id){const m=matches.find(x=>x.id===id);if(!m||!confirm('¿Eliminar '+(m.name||'este partido')+' y todas sus apuestas? Esta acción no se puede deshacer.'))return;try{await deleteDoc(doc(db,'nbaMatches',id));if(activeMatchId===id){activeMatchId=null;localStorage.removeItem('nba_active_match_id');}showToast('Partido eliminado.');}catch(error){console.error(error);showToast(firebaseError(error),'error');}}
+    function switchMatch(id){activeMatchId=id;localStorage.setItem('nba_active_match_id',id);render();closeModal('matchesModal');}
+    function openBetModal(betId=null){const m=activeMatch();if(!m){showToast('Primero crea un partido.','error');return;}editingBetId=betId;const b=betId?(m.bets||[]).find(x=>x.id===betId):null;$('betModalTitle').textContent=b?'Editar apuesta':'Añadir apuesta';$('betNote').value=b?.note||'';$('betLine').value=b?.betLine??215.5;$('handicapLine').value=b?.handicapValue??-3.5;$('handicapTeam').innerHTML='<option value="1">'+esc(teamById(m.homeTeamId).name)+'</option><option value="2">'+esc(teamById(m.awayTeamId).name)+'</option>';$('handicapTeam').value=String(b?.handicapTeam||1);setBetType(b?.type||'under');$('betSubmit').textContent=b?'Guardar cambios':'Guardar apuesta';openModal('betModal');}
+    function setBetType(type){currentBetType=type;document.querySelectorAll('.bet-type').forEach(b=>{const active=b.dataset.betType===type;b.className='bet-type rounded-xl border py-2.5 text-[10px] font-black '+(active?(type==='under'?'border-blue-400 bg-blue-500/20 text-blue-200':type==='over'?'border-amber-400 bg-amber-500/20 text-amber-200':'border-purple-400 bg-purple-500/20 text-purple-200'):'border-slate-700 bg-slate-950 text-slate-400');});$('totalFields').classList.toggle('hidden',type==='handicap');$('handicapFields').classList.toggle('hidden',type!=='handicap');$('betLine').required=type!=='handicap';$('handicapLine').required=type==='handicap';}
+    async function saveBet(event){event.preventDefault();const m=activeMatch();if(!m)return;const b={id:editingBetId||'bet_'+Date.now(),type:currentBetType,note:$('betNote').value.trim(),createdAt:Date.now()};if(currentBetType==='handicap'){b.handicapTeam=Number($('handicapTeam').value);b.handicapValue=Number($('handicapLine').value);if(!Number.isFinite(b.handicapValue)){showToast('Introduce una línea de hándicap válida.','error');return;}}else{b.betLine=Number($('betLine').value);if(!Number.isFinite(b.betLine)||b.betLine<0){showToast('Introduce una línea válida.','error');return;}}
+      try{await runTransaction(db,async tx=>{const ref=doc(db,'nbaMatches',m.id),snap=await tx.get(ref);if(!snap.exists())throw new Error('El partido ya no existe.');const bets=Array.isArray(snap.data().bets)?[...snap.data().bets]:[],i=bets.findIndex(x=>x.id===b.id);if(i>=0)bets[i]=b;else bets.push(b);tx.update(ref,{bets,updatedAt:serverTimestamp()});});editingBetId=null;closeModal('betModal');showToast('Apuesta guardada en Firebase.');}catch(error){console.error(error);showToast(firebaseError(error),'error');}}
+    async function deleteBet(id){const m=activeMatch();if(!m)return;try{await runTransaction(db,async tx=>{const ref=doc(db,'nbaMatches',m.id),snap=await tx.get(ref);if(!snap.exists())return;tx.update(ref,{bets:(snap.data().bets||[]).filter(b=>b.id!==id),updatedAt:serverTimestamp()});});showToast('Apuesta eliminada.');}catch(error){showToast(firebaseError(error),'error');}}
+    function renderBets(m){const bets=Array.isArray(m.bets)?m.bets:[],total=Number(m.score1||0)+Number(m.score2||0);$('betsList').innerHTML=bets.length?bets.map(b=>{let title='',detail='',status='',tone='';
+      if(b.type==='under'||b.type==='over'){const line=Number(b.betLine),under=b.type==='under';title=(under?'MENOS DE ':'MÁS DE ')+fmt(line);detail=esc(b.note||'Total del partido');if(Number.isInteger(line)&&total===line){status='PUSH · LÍNEA EXACTA';tone='warning';}else if(under){if(total<line){status='A SALVO POR '+fmt(line-total)+' PTS';tone='safe';}else{status='LÍNEA SUPERADA POR '+fmt(total-line)+' PTS';tone='danger';}}else if(total>line){status='A SALVO POR '+fmt(total-line)+' PTS';tone='safe';}else{status='FALTAN '+Math.max(0,Math.floor(line-total)+1)+' PTS';tone='warning';}}
+      else{const id=Number(b.handicapTeam)===1?m.homeTeamId:m.awayTeamId,t=teamById(id),line=Number(b.handicapValue),mine=Number(b.handicapTeam)===1?Number(m.score1||0):Number(m.score2||0),opp=Number(b.handicapTeam)===1?Number(m.score2||0):Number(m.score1||0),adjusted=mine+line-opp;title='HÁNDICAP '+t.id+' '+(line>0?'+':'')+fmt(line);detail=esc(t.name)+' · '+esc(b.note||'');if(Math.abs(adjusted)<.00001){status='PUSH · LÍNEA IGUALADA';tone='warning';}else if(adjusted>0){status='A SALVO POR '+fmt(adjusted)+' PTS';tone='safe';}else{status='VAS PERDIENDO POR '+fmt(Math.abs(adjusted))+' PTS · FALTAN '+(Math.floor(Math.abs(adjusted))+1);tone='danger';}}
+      return '<div class="bet-row rounded-xl border border-slate-800/80 p-3"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="text-xs font-black text-slate-100">'+esc(title)+'</p><p class="mt-1 truncate text-[10px] text-slate-500">'+detail+'</p></div><div class="flex shrink-0 items-center gap-1"><button onclick="openBetModal(\''+esc(b.id)+'\')" title="Editar apuesta" class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-white"><i class="fa-solid fa-pen text-[10px]"></i></button><button onclick="deleteBet(\''+esc(b.id)+'\')" title="Eliminar apuesta" class="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-300"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></div><p class="mt-3 border-t border-slate-800/80 pt-2.5 text-[10px] font-black tracking-wide '+tone+'">'+esc(status)+'</p></div>';}).join(''):'<p class="rounded-xl border border-dashed border-slate-700 p-4 text-center text-xs text-slate-500">Crea una apuesta para calcular el margen en vivo.</p>';}
+    function openModal(id){$(id).classList.remove('hidden');$(id).classList.add('flex');}
+    function closeModal(id){$(id).classList.add('hidden');$(id).classList.remove('flex');if(id==='createModal')editingMatchId=null;}
+    function firebaseError(e){const code=e?.code||'';if(code.includes('permission-denied'))return 'Firebase rechazó la operación. Revisa las reglas de Firestore.';if(code.includes('unavailable'))return 'Sin conexión a Firestore. Revisa tu internet.';if(code.includes('failed-precondition'))return 'Firestore necesita una configuración adicional. Revisa Firebase Console.';return 'No se pudo guardar. Revisa que Firestore esté habilitado y que sus reglas estén publicadas.';}
+    $('createForm').addEventListener('submit',submitCreate);$('betForm').addEventListener('submit',saveBet);populateTeamSelectors();
+    onSnapshot(collection(db,'nbaMatches'),snapshot=>{matches=snapshot.docs.map(d=>({id:d.id,...d.data()}));matches.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));if(!activeMatchId||!matches.some(m=>m.id===activeMatchId)){activeMatchId=matches[0]?.id||null;if(activeMatchId)localStorage.setItem('nba_active_match_id',activeMatchId);else localStorage.removeItem('nba_active_match_id');}setConnection(true,'Firebase conectado. Los cambios se comparten entre dispositivos.');render();},error=>{console.error('Firestore onSnapshot',error);setConnection(false,firebaseError(error));showToast(firebaseError(error),true);});
+    Object.assign(window,{openCreateModal,openMatchesModal,openBetModal,closeModal,modifyScore,changePeriod,deleteMatch,switchMatch,setBetType,deleteBet});
+  </script>
 </body>
 </html>
-```
