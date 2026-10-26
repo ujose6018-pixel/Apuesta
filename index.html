@@ -133,7 +133,7 @@
       const h=teamById(m.homeTeamId),a=teamById(m.awayTeamId),s1=Number(m.score1||0),s2=Number(m.score2||0),diff=s1-s2;
       $('matchTitle').textContent=m.name||(h.name+' vs '+a.name);$('matchDateLabel').textContent=m.updatedAt?'Cambios sincronizados con Firebase':'Marcador en directo';
       $('homeName').textContent=h.name;$('homeCode').textContent='LOCAL · '+h.id;$('awayName').textContent=a.name;$('awayCode').textContent='VISITANTE · '+a.id;$('homeControlLabel').textContent=h.id+' · '+h.name;$('awayControlLabel').textContent=a.id+' · '+a.name;setLogo('home',h);setLogo('away',a);
-      $('homeScore').textContent=s1;$('awayScore').textContent=s2;$('totalScore').textContent=s1+s2;$('periodSelect').value=m.period||'Pre';$('periodSummary').textContent=periods[m.period||'Pre']||m.period;$('periodSummary2').textContent=periods[m.period||'Pre']||m.period;
+      $('homeScore').textContent=s1;$('awayScore').textContent=s2;$('totalScore').textContent=s1+s2;if($('periodSelect'))$('periodSelect').value=m.period||'Pre';if($('periodSummary'))$('periodSummary').textContent=periods[m.period||'Pre']||m.period;if($('periodSummary2'))$('periodSummary2').textContent=periods[m.period||'Pre']||m.period;
       $('scoreDiff').textContent=(diff>0?'+':'')+diff;$('scoreDiff').className='mt-1 text-xl font-black '+(diff>0?'text-emerald-300':diff<0?'text-red-300':'text-slate-100');$('leaderText').textContent=diff===0?'Empate':(diff>0?h.name+' arriba':a.name+' arriba');$('leaderText2').textContent=diff===0?'Empate':(diff>0?h.id+' arriba':a.id+' arriba');
       $('betCount').textContent=(m.bets||[]).length;renderBets(m);renderQuickMatches();renderMatchesList();
     }
