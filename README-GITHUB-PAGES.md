@@ -17,6 +17,9 @@ Esta app es una web estática: no necesita Node.js ni un servidor backend. Fireb
 
 ## Datos y funciones
 - Colección Firestore: `nbaMatches`.
-- Marcador, periodo, partidos y apuestas se sincronizan en tiempo real.
-- Selector de los 30 equipos NBA con logos, controles +1/+2/+3 y animación especial de triples.
+- Marcador global, partidos y apuestas se sincronizan en tiempo real.
+- Selector de los 30 equipos NBA con logos, controles +1/+2/+3 y lluvia de +3 a pantalla completa en cada triple (también se ve en los demás dispositivos conectados).
+- Tipos de apuesta: Más/Menos, Hándicap, Ganador con Pago Anticipado (+20, guarda la ventaja máxima) y Puntos de jugador con botones +1/+2/+3.
+- Líneas enteras muestran push ("faltan X para push · X+1 para ganar").
+- Monto y cuota opcionales por apuesta: muestra cobro posible y total en juego.
 - Los márgenes UNDER/OVER y hándicap se recalculan en vivo.
